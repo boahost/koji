@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\CustomerAuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ProductController;
@@ -82,8 +83,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
 require __DIR__.'/auth.php';
 
 // Rotas do Revendedor
-// Rota pública para exibição de produtos
+// Rotas públicas
 Route::get('/produtos', [ProductShowcaseController::class, 'index'])->name('products');
+Route::get('/carrinho', [ProductShowcaseController::class, 'cart'])->name('cart');
+
+// Rotas de autenticação do cliente
+Route::middleware('guest:customer')->group(function () {
+    Route::get('/login', [CustomerAuthController::class, 'showLogin'])->name('customer.login');
+    Route::post('/login', [CustomerAuthController::class, 'login']);
+    Route::get('/registro', [CustomerAuthController::class, 'showRegister'])->name('customer.register');
+    Route::post('/registro', [CustomerAuthController::class, 'register']);
+    
+    // Rotas de redefinição de senha
+    Route::get('/esqueci-senha', [CustomerAuthController::class, 'showForgotPassword'])
+        ->name('customer.password.request');
+    Route::post('/esqueci-senha', [CustomerAuthController::class, 'sendResetLinkEmail'])
+        ->name('customer.password.email');
+    Route::get('/redefinir-senha/{token}', [CustomerAuthController::class, 'showResetPassword'])
+        ->name('customer.password.reset');
+    Route::post('/redefinir-senha', [CustomerAuthController::class, 'resetPassword'])
+        ->name('customer.password.update');
+});
+
+// Rotas protegidas do cliente
+Route::middleware('auth:customer')->group(function () {
+    Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('customer.logout');
+    Route::get('/minha-conta', [CustomerAuthController::class, 'dashboard'])->name('customer.dashboard');
+    Route::get('/favoritos', [CustomerAuthController::class, 'favorites'])->name('favorites');
+    Route::get('/perfil', [CustomerAuthController::class, 'profile'])->name('customer.profile');
+    Route::put('/perfil', [CustomerAuthController::class, 'updateProfile'])->name('customer.profile.update');
+});
 
 Route::middleware('web')->group(function () {
     Route::get('revendedor/login', [ResellerAuthController::class, 'showLogin'])->name('reseller.login');

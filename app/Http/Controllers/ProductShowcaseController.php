@@ -10,6 +10,12 @@ use Inertia\Inertia;
 
 class ProductShowcaseController extends Controller
 {
+    public function cart()
+    {
+        return Inertia::render('Customers/Cart/Index', [
+            'cartItems' => [], // Aqui virá a lógica do carrinho
+        ]);
+    }
     public function index(Request $request)
     {
         $query = Product::with(['category', 'department'])

@@ -246,7 +246,7 @@
                         </li>
                         <li class="mt-auto pb-8">
                             <Link
-                                :href="route('logout')"
+                                :href="route('customer.logout')"
                                 method="post"
                                 as="button"
                                 class="group flex w-full items-center gap-x-3 rounded-xl px-4 py-3 text-sm font-semibold leading-6 text-white/80 hover:bg-white/10 hover:text-white transition-all duration-300 ease-in-out hover:shadow-md"
