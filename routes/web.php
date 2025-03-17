@@ -2,11 +2,14 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ResellerController;
 use App\Http\Controllers\ResellerAuthController;
 use App\Http\Controllers\ResellerDashboardController;
+use App\Http\Controllers\ProductShowcaseController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -23,9 +26,17 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Rotas de Clientes
+    Route::prefix('customers')->name('customers.')->group(function () {
+        Route::get('/', [CustomerController::class, 'index'])->name('index');
+        Route::get('/create', [CustomerController::class, 'create'])->name('create');
+        Route::post('/', [CustomerController::class, 'store'])->name('store');
+        Route::get('/{customer}/edit', [CustomerController::class, 'edit'])->name('edit');
+        Route::put('/{customer}', [CustomerController::class, 'update'])->name('update');
+        Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('destroy');
+    });
 
 
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories');
@@ -71,10 +82,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 require __DIR__.'/auth.php';
 
 // Rotas do Revendedor
-Route::get('revendedor/login', [ResellerAuthController::class, 'showLogin'])->name('reseller.login');
-Route::post('revendedor/login', [ResellerAuthController::class, 'login']);
+// Rota pública para exibição de produtos
+Route::get('/produtos', [ProductShowcaseController::class, 'index'])->name('products');
 
-Route::middleware('reseller')->prefix('revendedor')->group(function () {
+Route::middleware('web')->group(function () {
+    Route::get('revendedor/login', [ResellerAuthController::class, 'showLogin'])->name('reseller.login');
+    Route::post('revendedor/login', [ResellerAuthController::class, 'login']);
+});
+
+Route::middleware(['web', 'auth:reseller'])->prefix('revendedor')->group(function () {
     Route::post('logout', [ResellerAuthController::class, 'logout'])->name('reseller.logout');
     Route::get('dashboard', [ResellerDashboardController::class, 'index'])->name('reseller.dashboard');
     Route::get('perfil', [ResellerDashboardController::class, 'profile'])->name('reseller.profile');

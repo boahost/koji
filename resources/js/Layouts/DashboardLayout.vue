@@ -317,7 +317,8 @@ import {
     UserIcon,
     TagIcon,
     BuildingOfficeIcon,
-    UsersIcon
+    UsersIcon,
+    UserGroupIcon
 } from '@heroicons/vue/24/outline'
 import { Link, usePage } from '@inertiajs/vue3'
 
@@ -374,6 +375,15 @@ const navigation = [
         submenu: [
             { name: 'Listar', href: route('resellers.index'), current: route().current('resellers.index') },
             { name: 'Cadastrar', href: route('resellers.create'), current: route().current('resellers.create') },
+        ]
+    },
+    {
+        name: 'Clientes',
+        icon: UserGroupIcon,
+        current: route().current('customers.*'),
+        submenu: [
+            { name: 'Listar', href: route('customers.index'), current: route().current('customers.index') },
+            { name: 'Cadastrar', href: route('customers.create'), current: route().current('customers.create') },
         ]
     },
     { name: 'Perfil', href: route('profile.edit'), icon: UserIcon, current: route().current('profile.*') },

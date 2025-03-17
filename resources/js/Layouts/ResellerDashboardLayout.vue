@@ -1,3 +1,40 @@
+<script setup>
+import { ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
+import {
+    Dialog,
+    DialogPanel,
+    Menu,
+    MenuButton,
+    MenuItem,
+    MenuItems,
+    TransitionChild,
+    TransitionRoot,
+} from '@headlessui/vue';
+import {
+    Bars3Icon,
+    ChevronDownIcon,
+    UserCircleIcon,
+    XMarkIcon,
+    HomeIcon,
+    UserIcon,
+} from '@heroicons/vue/24/outline';
+
+const sidebarOpen = ref(false);
+
+const navigation = [
+    { name: 'Dashboard', href: route('reseller.dashboard'), icon: HomeIcon, current: route().current('reseller.dashboard') },
+    { name: 'Perfil', href: route('reseller.profile'), icon: UserIcon, current: route().current('reseller.profile') },
+];
+
+defineProps({
+    reseller: {
+        type: Object,
+        required: true
+    }
+});
+</script>
+
 <template>
     <div>
         <!-- Off-canvas menu for mobile -->
@@ -33,9 +70,9 @@
                                 </button>
                             </div>
                             <!-- Sidebar component for mobile -->
-                            <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4">
+                            <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-gradient-to-b from-blue-800 via-blue-700 to-blue-900 px-6 pb-4">
                                 <div class="flex h-16 shrink-0 items-center">
-                                    <h1 class="text-2xl font-bold text-primary-600">Área do Revendedor</h1>
+                                    <h1 class="text-2xl font-bold text-white">Área do Revendedor</h1>
                                 </div>
                                 <nav class="flex flex-1 flex-col">
                                     <ul role="list" class="flex flex-1 flex-col gap-y-7">
@@ -46,15 +83,15 @@
                                                         :href="item.href"
                                                         :class="[
                                                             item.current
-                                                                ? 'bg-primary-50 text-primary-600'
-                                                                : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50',
+                                                                ? 'bg-blue-600 text-white'
+                                                                : 'text-white hover:text-white hover:bg-blue-600',
                                                             'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
                                                         ]"
                                                     >
                                                         <component
                                                             :is="item.icon"
                                                             :class="[
-                                                                item.current ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-600',
+                                                                item.current ? 'text-white' : 'text-white/80 group-hover:text-white',
                                                                 'h-6 w-6 shrink-0'
                                                             ]"
                                                             aria-hidden="true"
@@ -75,9 +112,9 @@
 
         <!-- Static sidebar for desktop -->
         <div class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-            <div class="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 pb-4">
+            <div class="flex grow flex-col gap-y-5 overflow-y-auto border-r border-blue-900/50 bg-gradient-to-b from-blue-800 via-blue-700 to-blue-900 px-6 pb-4">
                 <div class="flex h-16 shrink-0 items-center">
-                    <h1 class="text-2xl font-bold text-primary-600">Área do Revendedor</h1>
+                    <h1 class="text-2xl font-bold text-white">Área do Revendedor</h1>
                 </div>
                 <nav class="flex flex-1 flex-col">
                     <ul role="list" class="flex flex-1 flex-col gap-y-7">
@@ -88,15 +125,15 @@
                                         :href="item.href"
                                         :class="[
                                             item.current
-                                                ? 'bg-primary-50 text-primary-600'
-                                                : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50',
+                                                ? 'bg-blue-900/50 text-white'
+                                                : 'text-white/90 hover:text-white hover:bg-blue-900/30',
                                             'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
                                         ]"
                                     >
                                         <component
                                             :is="item.icon"
                                             :class="[
-                                                item.current ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-600',
+                                                item.current ? 'text-white' : 'text-white/80 group-hover:text-white',
                                                 'h-6 w-6 shrink-0'
                                             ]"
                                             aria-hidden="true"
@@ -130,7 +167,7 @@
                                 <UserCircleIcon class="h-8 w-8 text-gray-400" aria-hidden="true" />
                                 <span class="hidden lg:flex lg:items-center">
                                     <span class="ml-4 text-sm font-semibold leading-6 text-gray-900" aria-hidden="true">
-                                        {{ user.name }}
+                                        {{ reseller.name }}
                                     </span>
                                     <ChevronDownIcon class="ml-2 h-5 w-5 text-gray-400" aria-hidden="true" />
                                 </span>
@@ -174,33 +211,3 @@
         </div>
     </div>
 </template>
-
-<script setup>
-import { ref } from 'vue'
-import {
-    Dialog,
-    DialogPanel,
-    Menu,
-    MenuButton,
-    MenuItem,
-    MenuItems,
-    TransitionChild,
-    TransitionRoot,
-} from '@headlessui/vue'
-import {
-    Bars3Icon,
-    ChartBarIcon,
-    UserCircleIcon,
-    XMarkIcon,
-    ChevronDownIcon,
-} from '@heroicons/vue/24/outline'
-import { Link, usePage } from '@inertiajs/vue3'
-
-const sidebarOpen = ref(false)
-const user = usePage().props.auth.reseller
-
-const navigation = [
-    { name: 'Valores', href: route('reseller.dashboard'), icon: ChartBarIcon, current: route().current('reseller.dashboard') },
-    { name: 'Perfil', href: route('reseller.profile'), icon: UserCircleIcon, current: route().current('reseller.profile') },
-]
-</script>

@@ -1,42 +1,40 @@
 <template>
-    <ResellerDashboardLayout>
-        <div class="space-y-10 divide-y divide-gray-900/10">
-            <div class="grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-3">
-                <div class="px-4 sm:px-0">
-                    <h2 class="text-base font-semibold leading-7 text-gray-900">Perfil</h2>
-                    <p class="mt-1 text-sm leading-6 text-gray-600">
-                        Suas informações pessoais.
-                    </p>
-                </div>
-
-                <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-xl md:col-span-2 animate-fadeInUp">
-                    <div class="px-4 py-6 sm:p-8">
-                        <div class="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                            <div class="sm:col-span-4">
-                                <div class="space-y-2">
-                                    <h4 class="text-sm font-medium text-gray-500">Nome</h4>
-                                    <p class="text-sm text-gray-900">{{ reseller.name }}</p>
+    <ResellerDashboardLayout :reseller="props.reseller">
+        <div class="py-6">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <h1 class="text-2xl font-semibold text-gray-900">Perfil</h1>
+            </div>
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
+                <div class="py-4">
+                    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-xl animate-fadeInUp">
+                        <div class="px-4 py-6 sm:p-8">
+                            <div class="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                                <div class="sm:col-span-4">
+                                    <div class="space-y-2">
+                                        <h4 class="text-sm font-medium text-gray-500">Nome</h4>
+                                        <p class="text-sm text-gray-900">{{ reseller.name }}</p>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div class="sm:col-span-4">
-                                <div class="space-y-2">
-                                    <h4 class="text-sm font-medium text-gray-500">E-mail</h4>
-                                    <p class="text-sm text-gray-900">{{ reseller.email }}</p>
+                                <div class="sm:col-span-4">
+                                    <div class="space-y-2">
+                                        <h4 class="text-sm font-medium text-gray-500">E-mail</h4>
+                                        <p class="text-sm text-gray-900">{{ reseller.email }}</p>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div class="sm:col-span-4">
-                                <div class="space-y-2">
-                                    <h4 class="text-sm font-medium text-gray-500">CPF/CNPJ</h4>
-                                    <p class="text-sm text-gray-900">{{ formatDocument(reseller.document) }}</p>
+                                <div class="sm:col-span-4">
+                                    <div class="space-y-2">
+                                        <h4 class="text-sm font-medium text-gray-500">CPF/CNPJ</h4>
+                                        <p class="text-sm text-gray-900">{{ formatDocument(reseller.document) }}</p>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div class="sm:col-span-4">
-                                <div class="space-y-2">
-                                    <h4 class="text-sm font-medium text-gray-500">Taxa de Comissão</h4>
-                                    <p class="text-sm text-gray-900">{{ reseller.commission_rate }}%</p>
+                                <div class="sm:col-span-4">
+                                    <div class="space-y-2">
+                                        <h4 class="text-sm font-medium text-gray-500">Taxa de Comissão</h4>
+                                        <p class="text-sm text-gray-900">{{ reseller.commission_rate }}%</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Notifications\Notifiable;
 
 class Reseller extends Authenticatable
 {
-    use HasFactory, SoftDeletes, DocumentValidation;
+    use HasFactory, SoftDeletes, DocumentValidation, Notifiable;
 
     protected $fillable = [
         'name',
@@ -28,6 +29,8 @@ class Reseller extends Authenticatable
 
     protected $casts = [
         'commission_rate' => 'decimal:2',
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
     ];
 
     /**
