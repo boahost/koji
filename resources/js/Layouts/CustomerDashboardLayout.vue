@@ -4,7 +4,6 @@ import { Link } from '@inertiajs/vue3';
 import {
     HomeIcon,
     ShoppingBagIcon,
-    HeartIcon,
     UserIcon,
     ArrowRightOnRectangleIcon,
 } from '@heroicons/vue/24/outline';
@@ -12,7 +11,6 @@ import {
 const navigation = [
     { name: 'Início', href: route('products'), icon: HomeIcon },
     { name: 'Pedidos', href: route('customer.dashboard'), icon: ShoppingBagIcon },
-    { name: 'Favoritos', href: route('favorites'), icon: HeartIcon },
     { name: 'Perfil', href: route('customer.profile'), icon: UserIcon },
 ];
 </script>

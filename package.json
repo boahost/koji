@@ -30,6 +30,7 @@
         "sweetalert2": "^11.17.2",
         "vanilla-masker": "^1.2.0",
         "vue": "^3.5.13",
+        "vue-imask": "^7.6.1",
         "vue3-toastify": "^0.2.8",
         "workbox-webpack-plugin": "^7.3.0"
     }

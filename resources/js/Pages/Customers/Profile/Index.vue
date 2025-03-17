@@ -66,10 +66,10 @@ const submit = () => {
                             id="name"
                             type="text"
                             v-model="form.name"
-                            class="mt-1 block w-full"
-                            required
+                            class="mt-1 block w-full bg-gray-50 cursor-not-allowed"
+                            disabled
                         />
-                        <InputError :message="form.errors.name" class="mt-1" />
+                        <p class="mt-1 text-sm text-gray-500">O nome não pode ser alterado</p>
                     </div>
 
                     <!-- Email -->
@@ -79,10 +79,10 @@ const submit = () => {
                             id="email"
                             type="email"
                             v-model="form.email"
-                            class="mt-1 block w-full"
-                            required
+                            class="mt-1 block w-full bg-gray-50 cursor-not-allowed"
+                            disabled
                         />
-                        <InputError :message="form.errors.email" class="mt-1" />
+                        <p class="mt-1 text-sm text-gray-500">O e-mail não pode ser alterado</p>
                     </div>
 
                     <!-- Document -->
@@ -92,10 +92,10 @@ const submit = () => {
                             v-model="form.document"
                             :mask="'000.000.000-00'"
                             :unmask="true"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-50 cursor-not-allowed"
                             disabled
                         />
-                        <InputError :message="form.errors.document" class="mt-1" />
+                        <p class="mt-1 text-sm text-gray-500">O CPF não pode ser alterado</p>
                     </div>
                 </div>
 

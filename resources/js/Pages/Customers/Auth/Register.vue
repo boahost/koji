@@ -16,10 +16,42 @@ const form = useForm({
     cep: '',
     street: '',
     number: '',
+    neighborhood: '',
+    city: '',
+    state: '',
     complement: '',
 });
 
 const loading = ref(false);
+const searchingCep = ref(false);
+
+const searchCep = async () => {
+    // Remove caracteres não numéricos do CEP
+    const cep = form.cep.replace(/\D/g, '');
+    
+    if (cep.length !== 8) return;
+
+    searchingCep.value = true;
+    try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+
+        if (!data.erro) {
+            form.street = data.logradouro || '';
+            form.neighborhood = data.bairro || '';
+            form.city = data.localidade || '';
+            form.state = data.uf || '';
+            form.complement = data.complemento || '';
+            console.log('CEP encontrado:', data);
+        } else {
+            console.log('CEP não encontrado');
+        }
+    } catch (error) {
+        console.error('Erro ao buscar CEP:', error);
+    } finally {
+        searchingCep.value = false;
+    }
+};
 
 const submit = () => {
     loading.value = true;
@@ -121,14 +153,25 @@ const submit = () => {
                         <!-- CEP -->
                         <div class="space-y-1">
                             <InputLabel for="cep" value="CEP" />
-                            <IMaskComponent
-                                v-model="form.cep"
-                                :mask="'00000-000'"
-                                :unmask="true"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                placeholder="00000-000"
-                            />
+                            <div class="relative">
+                                <IMaskComponent
+                                    v-model="form.cep"
+                                    :mask="'00000-000'"
+                                    :unmask="false"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pr-10"
+                                    placeholder="00000-000"
+                                    @complete="searchCep"
+                                />
+                                <!-- Loading Spinner -->
+                                <div v-if="searchingCep" class="absolute inset-y-0 right-0 flex items-center pr-3 mt-1">
+                                    <svg class="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </div>
+                            </div>
                             <InputError :message="form.errors.cep" class="mt-1" />
+                            <p class="mt-1 text-sm text-gray-500">Digite o CEP para buscar o endereço automaticamente</p>
                         </div>
 
                         <!-- Street -->
@@ -157,6 +200,53 @@ const submit = () => {
                                 placeholder="123"
                             />
                             <InputError :message="form.errors.number" class="mt-1" />
+                        </div>
+
+                        <!-- Neighborhood (Bairro) -->
+                        <div class="space-y-1">
+                            <InputLabel for="neighborhood" value="Bairro" />
+                            <TextInput
+                                id="neighborhood"
+                                type="text"
+                                v-model="form.neighborhood"
+                                class="mt-1 block w-full"
+                                required
+                                placeholder="Centro"
+                            />
+                            <InputError :message="form.errors.neighborhood" class="mt-1" />
+                        </div>
+
+                        <!-- City and State Grid -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- City (Cidade) -->
+                            <div class="space-y-1">
+                                <InputLabel for="city" value="Cidade" />
+                                <TextInput
+                                    id="city"
+                                    type="text"
+                                    v-model="form.city"
+                                    class="mt-1 block w-full"
+                                    required
+                                    placeholder="São Paulo"
+                                />
+                                <InputError :message="form.errors.city" class="mt-1" />
+                            </div>
+
+                            <!-- State (Estado) -->
+                            <div class="space-y-1">
+                                <InputLabel for="state" value="Estado" />
+                                <TextInput
+                                    id="state"
+                                    type="text"
+                                    v-model="form.state"
+                                    class="mt-1 block w-full"
+                                    required
+                                    placeholder="SP"
+                                    maxlength="2"
+                                    style="text-transform: uppercase"
+                                />
+                                <InputError :message="form.errors.state" class="mt-1" />
+                            </div>
                         </div>
 
                         <!-- Complement -->

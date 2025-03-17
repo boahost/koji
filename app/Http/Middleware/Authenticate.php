@@ -16,6 +16,9 @@ class Authenticate extends Middleware
             if ($request->is('revendedor*')) {
                 return route('reseller.login');
             }
+            if ($request->is('minha-conta*', 'favoritos*', 'carrinho*')) {
+                return route('customer.login');
+            }
             return route('login');
         }
         return null;

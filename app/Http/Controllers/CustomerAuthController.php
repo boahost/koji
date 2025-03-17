@@ -66,7 +66,15 @@ class CustomerAuthController extends Controller
             'cep' => 'required|string',
             'street' => 'required|string|max:255',
             'number' => 'required|string|max:20',
+            'neighborhood' => 'required|string|max:255',
+            'city' => 'required|string|max:255',
+            'state' => 'required|string|size:2',
             'complement' => 'nullable|string|max:255',
+        ], [
+            'neighborhood.required' => 'O campo bairro é obrigatório',
+            'city.required' => 'O campo cidade é obrigatório',
+            'state.required' => 'O campo estado é obrigatório',
+            'state.size' => 'O campo estado deve ter exatamente 2 caracteres',
         ]);
 
         $customer = Customer::create([
@@ -77,19 +85,15 @@ class CustomerAuthController extends Controller
             'cep' => $request->cep,
             'street' => $request->street,
             'number' => $request->number,
+            'neighborhood' => $request->neighborhood,
+            'city' => $request->city,
+            'state' => strtoupper($request->state),
             'complement' => $request->complement,
         ]);
 
         Auth::guard('customer')->login($customer);
 
         return redirect()->route('customer.dashboard');
-    }
-
-    public function favorites()
-    {
-        return Inertia::render('Customers/Favorites/Index', [
-            'favorites' => [], // Aqui virá a lógica dos favoritos
-        ]);
     }
 
     public function profile()
@@ -104,11 +108,12 @@ class CustomerAuthController extends Controller
         $customer = Auth::guard('customer')->user();
 
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:customers,email,' . $customer->id,
             'cep' => 'required|string',
             'street' => 'required|string|max:255',
             'number' => 'required|string|max:20',
+            'neighborhood' => 'required|string|max:255',
+            'city' => 'required|string|max:255',
+            'state' => 'required|string|size:2',
             'complement' => 'nullable|string|max:255',
             'current_password' => 'nullable|required_with:password',
             'password' => 'nullable|min:8|confirmed',
@@ -121,12 +126,14 @@ class CustomerAuthController extends Controller
         }
 
         $customer->update([
-            'name' => $request->name,
-            'email' => $request->email,
             'cep' => $request->cep,
             'street' => $request->street,
             'number' => $request->number,
+            'neighborhood' => $request->neighborhood,
+            'city' => $request->city,
+            'state' => strtoupper($request->state),
             'complement' => $request->complement,
+            // Nome, CPF e email não podem ser alterados
         ]);
 
         if ($request->password) {

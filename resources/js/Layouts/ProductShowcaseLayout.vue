@@ -34,12 +34,22 @@
                         </div>
                     </div>
 
-                    <!-- Cart -->
-                    <div class="flex items-center">
-                        <button class="p-2 rounded-full hover:bg-gray-100 relative">
+                    <!-- Right Navigation -->
+                    <div class="flex items-center space-x-4">
+                        <!-- Cart -->
+                        <Link :href="route('customer.cart')" class="p-2 rounded-full hover:bg-gray-100 relative">
                             <ShoppingCartIcon class="h-6 w-6 text-gray-400 hover:text-gray-500" />
-                            <span class="absolute top-0 right-0 -mt-1 -mr-1 px-2 py-0.5 text-xs font-medium bg-blue-500 text-white rounded-full">0</span>
-                        </button>
+                            <span class="absolute top-0 right-0 -mt-1 -mr-1 px-2 py-0.5 text-xs font-medium bg-indigo-600 text-white rounded-full">0</span>
+                        </Link>
+
+                        <!-- Login/Profile -->
+                        <Link 
+                            :href="route('customer.login')"
+                            class="hidden sm:flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                        >
+                            <UserIcon class="h-5 w-5 mr-2" />
+                            Entrar
+                        </Link>
                     </div>
                 </div>
             </div>
@@ -85,17 +95,17 @@
 
                     <!-- Carrinho -->
                     <Link
-                        :href="route('cart')"
+                        :href="route('customer.cart')"
                         class="flex flex-col items-center group transition-all duration-200 ease-in-out"
                         :class="{
-                            'text-indigo-600': currentRoute === 'cart',
-                            'text-gray-500 hover:text-indigo-600': currentRoute !== 'cart'
+                            'text-indigo-600': currentRoute === 'customer.cart',
+                            'text-gray-500 hover:text-indigo-600': currentRoute !== 'customer.cart'
                         }"
                     >
                         <div class="p-2 rounded-full transition-all duration-200 ease-in-out relative"
                             :class="{
-                                'bg-indigo-50 scale-110': currentRoute === 'cart',
-                                'group-hover:bg-indigo-50 group-hover:scale-110': currentRoute !== 'cart'
+                                'bg-indigo-50 scale-110': currentRoute === 'customer.cart',
+                                'group-hover:bg-indigo-50 group-hover:scale-110': currentRoute !== 'customer.cart'
                             }">
                             <ShoppingCartIcon class="w-6 h-6" />
                             <span class="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-bounce">0</span>
@@ -119,7 +129,7 @@
                             }">
                             <UserIcon class="w-6 h-6" />
                         </div>
-                        <span class="text-xs font-medium mt-1">Minha Conta</span>
+                        <span class="text-xs font-medium mt-1">Entrar</span>
                     </Link>
                 </div>
             </div>

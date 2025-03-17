@@ -85,12 +85,12 @@ require __DIR__.'/auth.php';
 // Rotas do Revendedor
 // Rotas públicas
 Route::get('/produtos', [ProductShowcaseController::class, 'index'])->name('products');
-Route::get('/carrinho', [ProductShowcaseController::class, 'cart'])->name('cart');
+Route::get('/carrinho', [ProductShowcaseController::class, 'cart'])->name('customer.cart');
 
 // Rotas de autenticação do cliente
-Route::middleware('guest:customer')->group(function () {
-    Route::get('/login', [CustomerAuthController::class, 'showLogin'])->name('customer.login');
-    Route::post('/login', [CustomerAuthController::class, 'login']);
+Route::middleware('guest:customer')->prefix('cliente')->group(function () {
+    Route::get('/entrar', [CustomerAuthController::class, 'showLogin'])->name('customer.login');
+    Route::post('/entrar', [CustomerAuthController::class, 'login']);
     Route::get('/registro', [CustomerAuthController::class, 'showRegister'])->name('customer.register');
     Route::post('/registro', [CustomerAuthController::class, 'register']);
     
@@ -106,10 +106,9 @@ Route::middleware('guest:customer')->group(function () {
 });
 
 // Rotas protegidas do cliente
-Route::middleware('auth:customer')->group(function () {
+Route::middleware('auth:customer')->prefix('cliente')->group(function () {
     Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('customer.logout');
     Route::get('/minha-conta', [CustomerAuthController::class, 'dashboard'])->name('customer.dashboard');
-    Route::get('/favoritos', [CustomerAuthController::class, 'favorites'])->name('favorites');
     Route::get('/perfil', [CustomerAuthController::class, 'profile'])->name('customer.profile');
     Route::put('/perfil', [CustomerAuthController::class, 'updateProfile'])->name('customer.profile.update');
 });
