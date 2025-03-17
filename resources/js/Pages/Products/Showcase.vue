@@ -1,16 +1,12 @@
 <template>
-    <ProductShowcaseLayout :auth="auth">
+    <ProductShowcaseLayout :auth="auth" @toggle-filters="toggleFilters">
         <!-- Container Principal -->
         <div class="relative">
-            <!-- Botão Toggle Filtros Mobile -->
-            <button @click="toggleFilters" 
-                class="fixed bottom-4 right-4 z-50 lg:hidden bg-gradient-to-r from-black to-gray-900 text-white p-3 rounded-full shadow-lg hover:from-gray-800 hover:to-gray-700 transition-all duration-200 flex items-center justify-center">
-                <FunnelIcon class="h-6 w-6" />
-            </button>
+
 
             <!-- Overlay para Mobile -->
             <div v-if="showFilters" 
-                class="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300"
+                class="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300 backdrop-blur-sm"
                 @click="toggleFilters"></div>
 
             <!-- Container de Conteúdo -->
@@ -18,17 +14,22 @@
                 <!-- Filtros Laterais -->
                 <div :class="[
                     'w-64 flex-shrink-0 transition-all duration-300 ease-in-out',
-                    'fixed lg:static top-0 bottom-0 z-50 lg:z-0',
-                    showFilters ? 'left-0' : '-left-64 lg:left-0',
+                    'fixed lg:static top-0 left-0 bottom-0 z-50 lg:z-0 pt-4',
+                    showFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
                     'bg-white lg:bg-transparent shadow-lg lg:shadow-none'
                 ]">
-                    <div class="h-full overflow-y-auto p-4 bg-gradient-to-b from-gray-50 to-white rounded-lg border border-gray-100">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-semibold text-gray-900">Filtros</h2>
-                        <button @click="toggleFilters" class="lg:hidden text-gray-500 hover:text-gray-700">
-                            <XMarkIcon class="h-5 w-5" />
-                        </button>
-                    </div>
+                    <div class="h-full overflow-y-auto px-4 py-2 bg-gradient-to-b from-gray-50 to-white lg:rounded-lg lg:border lg:border-gray-100">
+                        <!-- Cabeçalho do Filtro -->
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold text-gray-900">Filtros</h2>
+                            <button 
+                                @click="toggleFilters" 
+                                class="lg:hidden p-2 rounded-full hover:bg-gray-100 transition-colors"
+                                aria-label="Fechar filtros"
+                            >
+                                <XMarkIcon class="h-5 w-5 text-gray-500" />
+                            </button>
+                        </div>
                     
                     <!-- Departamentos -->
                     <div class="mb-6">
@@ -97,7 +98,7 @@
                     <!-- Grid de Produtos -->
                     <TransitionGroup
                     tag="div"
-                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                    class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6"
                     enter-active-class="transition-all duration-300 ease-out"
                     enter-from-class="opacity-0 scale-95"
                     enter-to-class="opacity-100 scale-100"
@@ -112,7 +113,7 @@
                         :style="{ animationDelay: (index * 100) + 'ms' }"
                     >
                         <!-- Imagem do Produto -->
-                        <div class="relative aspect-w-4 aspect-h-3 bg-gray-200 group-hover:opacity-75 transition-opacity">
+                        <div class="relative aspect-square bg-gray-200 group-hover:opacity-75 transition-opacity">
                             <img
                                 :src="`storage/` + product.featured_image"
                                 :alt="product.name"
@@ -121,7 +122,7 @@
                         </div>
 
                         <!-- Informações do Produto -->
-                        <div class="p-4">
+                        <div class="p-2 sm:p-4">
                             <div class="flex items-center justify-between mb-1">
                                 <span class="text-[10px] text-gray-900 font-medium">{{ product.department.name }}</span>
                                 <template v-if="auth && auth.customer">
@@ -202,7 +203,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import { router } from '@inertiajs/vue3'
 import ProductShowcaseLayout from '@/Layouts/ProductShowcaseLayout.vue'
@@ -224,13 +225,23 @@ const filters = ref({
 })
 
 const sortBy = ref('newest')
-const showFilters = ref(window.innerWidth >= 1024) // Mostrar filtros por padrão em telas grandes
+// Mostrar filtros por padrão apenas em desktop
+const showFilters = ref(false)
+
+// Atualizar showFilters baseado no tamanho da tela
+onMounted(() => {
+    showFilters.value = window.innerWidth >= 1024
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 1024) {
+            showFilters.value = true
+        }
+    })
+})
 const toggleFilters = () => {
     showFilters.value = !showFilters.value
-    if (showFilters.value) {
-        document.body.style.overflow = 'hidden'
-    } else {
-        document.body.style.overflow = ''
+    // Bloqueia scroll do body quando o filtro está aberto em mobile
+    if (window.innerWidth < 1024) {
+        document.body.style.overflow = showFilters.value ? 'hidden' : ''
     }
 }
 

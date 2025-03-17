@@ -36,11 +36,15 @@
 
                     <!-- Right Navigation -->
                     <div class="flex items-center space-x-4">
-                        <!-- Cart -->
-                        <Link :href="route('customer.cart')" class="p-2 rounded-full hover:bg-gray-100 relative">
-                            <ShoppingCartIcon class="h-6 w-6 text-gray-400 hover:text-gray-500" />
-                            <span class="absolute top-0 right-0 -mt-1 -mr-1 px-2 py-0.5 text-xs font-medium bg-black text-white rounded-full">0</span>
-                        </Link>
+                        <!-- Botão de Filtro -->
+                        <button 
+                            @click="$emit('toggle-filters')"
+                            class="p-2 rounded-full hover:bg-gray-100 relative flex items-center gap-2"
+                            aria-label="Abrir filtros"
+                        >
+                            <FunnelIcon class="h-6 w-6 text-gray-400 hover:text-gray-500" />
+                            <span class="sr-only">Filtros</span>
+                        </button>
 
                         <!-- Login/Profile -->
                         <template v-if="auth">
@@ -175,6 +179,7 @@ import { ref, computed } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import { 
     MagnifyingGlassIcon, 
+    FunnelIcon,
     ShoppingCartIcon, 
     HomeIcon,
     UserIcon,
