@@ -15,15 +15,14 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+// Rota principal redireciona para a página de produtos
 Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect()->route('dashboard');
-    }
-    
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-    ]);
+    return redirect()->route('products');
+});
+
+// Redireciona /login para o login do cliente
+Route::get('/login', function () {
+    return redirect()->route('customer.login');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -80,7 +79,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-require __DIR__.'/auth.php';
 
 // Rotas do Revendedor
 // Rotas públicas
@@ -111,6 +109,12 @@ Route::middleware('auth:customer')->prefix('cliente')->group(function () {
     Route::get('/minha-conta', [CustomerAuthController::class, 'dashboard'])->name('customer.dashboard');
     Route::get('/perfil', [CustomerAuthController::class, 'profile'])->name('customer.profile');
     Route::put('/perfil', [CustomerAuthController::class, 'updateProfile'])->name('customer.profile.update');
+    
+    // Rotas do carrinho
+    Route::get('/carrinho', [CustomerAuthController::class, 'cart'])->name('cart');
+    
+    // Rotas de pedidos
+    Route::get('/pedidos', [CustomerAuthController::class, 'orders'])->name('customer.orders');
 });
 
 Route::middleware('web')->group(function () {
@@ -123,3 +127,7 @@ Route::middleware(['web', 'auth:reseller'])->prefix('revendedor')->group(functio
     Route::get('dashboard', [ResellerDashboardController::class, 'index'])->name('reseller.dashboard');
     Route::get('perfil', [ResellerDashboardController::class, 'profile'])->name('reseller.profile');
 });
+
+
+
+require __DIR__.'/auth.php';

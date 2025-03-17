@@ -9,7 +9,6 @@ return new class extends Migration
     public function up()
     {
         Schema::table('customers', function (Blueprint $table) {
-            $table->rememberToken();
             $table->timestamp('email_verified_at')->nullable();
         });
     }
@@ -17,7 +16,6 @@ return new class extends Migration
     public function down()
     {
         Schema::table('customers', function (Blueprint $table) {
-            $table->dropRememberToken();
             $table->dropColumn('email_verified_at');
         });
     }

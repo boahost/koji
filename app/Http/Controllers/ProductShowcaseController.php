@@ -14,6 +14,9 @@ class ProductShowcaseController extends Controller
     {
         return Inertia::render('Customers/Cart/Index', [
             'cartItems' => [], // Aqui virá a lógica do carrinho
+            'auth' => [
+                'customer' => auth('customer')->user(),
+            ],
         ]);
     }
     public function index(Request $request)
@@ -34,11 +37,14 @@ class ProductShowcaseController extends Controller
         $categories = Category::all();
         $departments = Department::all();
 
+        // dd(uth()->guard('customer')->user());
+
         return Inertia::render('Products/Showcase', [
             'products' => $products,
             'categories' => $categories,
             'departments' => $departments,
-            'filters' => $request->only(['search', 'category', 'department'])
+            'filters' => $request->only(['search', 'category', 'department']),
+            'auth' => auth()->guard('customer')->user()
         ]);
     }
 }

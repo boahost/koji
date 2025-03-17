@@ -1,9 +1,10 @@
 <script setup>
-import { Head } from '@inertiajs/vue3';
-import ProductShowcaseLayout from '@/Layouts/ProductShowcaseLayout.vue';
+import { Head, Link } from '@inertiajs/vue3';
+import CustomerDashboardLayout from '@/Layouts/CustomerDashboardLayout.vue';
 import { ShoppingBagIcon } from '@heroicons/vue/24/outline';
 
 defineProps({
+    customer: Object,
     cartItems: Array
 });
 </script>
@@ -11,11 +12,11 @@ defineProps({
 <template>
     <Head title="Carrinho" />
 
-    <ProductShowcaseLayout>
+    <CustomerDashboardLayout :customer="customer">
         <div class="min-h-[80vh] px-4 sm:px-6 lg:px-8 animate-fade-in-up">
             <!-- Header -->
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h1 class="text-2xl font-bold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
+                <h1 class="text-2xl font-bold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-black to-gray-900">
                     Meu Carrinho
                 </h1>
                 <p class="mt-2 text-sm text-gray-500">
@@ -33,7 +34,7 @@ defineProps({
                 <div class="mt-6">
                     <Link
                         :href="route('products')"
-                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ease-in-out"
+                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-gradient-to-r from-black to-gray-900 hover:from-gray-800 hover:to-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-all duration-200 ease-in-out"
                     >
                         Ver produtos
                     </Link>
@@ -66,13 +67,13 @@ defineProps({
                         </p>
                         <div class="mt-2 flex items-center space-x-2">
                             <button
-                                class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ease-in-out"
+                                class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-all duration-200 ease-in-out"
                             >
                                 -
                             </button>
                             <span class="text-sm font-medium text-gray-900">{{ item.quantity }}</span>
                             <button
-                                class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ease-in-out"
+                                class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-all duration-200 ease-in-out"
                             >
                                 +
                             </button>
@@ -99,7 +100,7 @@ defineProps({
                     <p class="mt-0.5 text-sm text-gray-500">Frete e impostos calculados no checkout.</p>
                     <div class="mt-6">
                         <button
-                            class="w-full flex justify-center items-center px-6 py-3 border border-transparent rounded-xl shadow-sm text-base font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ease-in-out"
+                            class="w-full flex justify-center items-center px-6 py-3 border border-transparent rounded-xl shadow-sm text-base font-medium text-white bg-gradient-to-r from-black to-gray-900 hover:from-gray-800 hover:to-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-all duration-200 ease-in-out"
                         >
                             Finalizar Compra
                         </button>
@@ -107,7 +108,7 @@ defineProps({
                 </div>
             </div>
         </div>
-    </ProductShowcaseLayout>
+    </CustomerDashboardLayout>
 </template>
 
 <style>

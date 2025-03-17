@@ -1,10 +1,10 @@
 <template>
-    <ProductShowcaseLayout>
+    <ProductShowcaseLayout :auth="auth">
         <!-- Container Principal -->
         <div class="relative">
             <!-- Botão Toggle Filtros Mobile -->
             <button @click="toggleFilters" 
-                class="fixed bottom-4 right-4 z-50 lg:hidden bg-indigo-600 text-white p-3 rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-200 flex items-center justify-center">
+                class="fixed bottom-4 right-4 z-50 lg:hidden bg-gradient-to-r from-black to-gray-900 text-white p-3 rounded-full shadow-lg hover:from-gray-800 hover:to-gray-700 transition-all duration-200 flex items-center justify-center">
                 <FunnelIcon class="h-6 w-6" />
             </button>
 
@@ -24,7 +24,7 @@
                 ]">
                     <div class="h-full overflow-y-auto p-4 bg-gradient-to-b from-gray-50 to-white rounded-lg border border-gray-100">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-semibold text-indigo-900">Filtros</h2>
+                        <h2 class="text-lg font-semibold text-gray-900">Filtros</h2>
                         <button @click="toggleFilters" class="lg:hidden text-gray-500 hover:text-gray-700">
                             <XMarkIcon class="h-5 w-5" />
                         </button>
@@ -32,7 +32,7 @@
                     
                     <!-- Departamentos -->
                     <div class="mb-6">
-                        <h3 class="text-sm font-medium text-indigo-900 mb-2">Departamentos</h3>
+                        <h3 class="text-sm font-medium text-gray-900 mb-2">Departamentos</h3>
                         <div class="space-y-2">
                             <label v-for="dept in departments" :key="dept.id" class="flex items-center">
                                 <input
@@ -40,7 +40,7 @@
                                     name="department"
                                     :value="dept.id"
                                     v-model="filters.department"
-                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    class="h-4 w-4 text-gray-900 focus:ring-gray-900 border-gray-300 rounded"
                                     @change="applyFilters"
                                 >
                                 <span class="ml-2 text-sm text-gray-600">{{ dept.name }}</span>
@@ -50,7 +50,7 @@
 
                     <!-- Categorias -->
                     <div class="mb-6">
-                        <h3 class="text-sm font-medium text-indigo-900 mb-2">Categorias</h3>
+                        <h3 class="text-sm font-medium text-gray-900 mb-2">Categorias</h3>
                         <div class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
                             <label v-for="cat in filteredCategories" :key="cat.id" class="flex items-center">
                                 <input
@@ -58,7 +58,7 @@
                                     name="category"
                                     :value="cat.id"
                                     v-model="filters.category"
-                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    class="h-4 w-4 text-gray-900 focus:ring-gray-900 border-gray-300 rounded"
                                     @change="applyFilters"
                                 >
                                 <span class="ml-2 text-sm text-gray-600">{{ cat.name }}</span>
@@ -66,10 +66,23 @@
                         </div>
                     </div>
 
+                    <div class="flex items-center justify-between mb-6 animate-fade-in">
+                        <select
+                        v-model="sortBy"
+                        @change="applySort"
+                        class="block w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-gray-900 focus:border-gray-900 sm:text-sm rounded-md"
+                        >
+                        <option value="newest">Mais Recentes</option>
+                        <option value="price_asc">Menor Preço</option>
+                        <option value="price_desc">Maior Preço</option>
+                        <option value="name">Nome (A-Z)</option>
+                        </select>
+                    </div>
+
                     <!-- Limpar Filtros -->
                     <button
                         @click="clearFilters"
-                        class="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-md hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 transform hover:scale-105"
+                        class="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-black to-gray-900 rounded-md hover:from-gray-800 hover:to-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-all duration-200 transform hover:scale-105"
                     >
                         Limpar Filtros
                     </button>
@@ -78,22 +91,8 @@
 
                 <!-- Lista de Produtos -->
                 <div class="flex-1 px-4 sm:px-0">
-                    <!-- Resultados e Ordenação -->
-                    <div class="flex items-center justify-between mb-6 animate-fade-in">
-                    <h1 class="text-2xl font-bold text-gray-900">
-                        {{ products.total }} Produtos Encontrados
-                    </h1>
-                    <select
-                        v-model="sortBy"
-                        @change="applySort"
-                        class="block w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                    >
-                        <option value="newest">Mais Recentes</option>
-                        <option value="price_asc">Menor Preço</option>
-                        <option value="price_desc">Maior Preço</option>
-                        <option value="name">Nome (A-Z)</option>
-                    </select>
-                </div>
+                    <!-- Resultados, Saudação e Ordenação -->
+
 
                     <!-- Grid de Produtos -->
                     <TransitionGroup
@@ -115,7 +114,7 @@
                         <!-- Imagem do Produto -->
                         <div class="relative aspect-w-4 aspect-h-3 bg-gray-200 group-hover:opacity-75 transition-opacity">
                             <img
-                                :src="product.featured_image"
+                                :src="`storage/` + product.featured_image"
                                 :alt="product.name"
                                 class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-200"
                             >
@@ -124,10 +123,12 @@
                         <!-- Informações do Produto -->
                         <div class="p-4">
                             <div class="flex items-center justify-between mb-1">
-                                <span class="text-xs text-gray-500">{{ product.category.name }}</span>
-                                <span class="text-xs text-blue-600 font-medium">{{ product.department.name }}</span>
+                                <span class="text-[10px] text-gray-900 font-medium">{{ product.department.name }}</span>
+                                <template v-if="auth && auth.customer">
+                                    <span class="text-xs text-gray-900 font-medium">Olá usuário</span>
+                                </template>
                             </div>
-                            <h3 class="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+                            <h3 class="text-sm font-medium text-gray-900 group-hover:text-black transition-colors line-clamp-2">
                                 {{ product.name }}
                             </h3>
                             <p class="mt-2 text-lg font-bold text-gray-900">
@@ -136,8 +137,8 @@
                             
                             <!-- Botão Comprar -->
                             <button
-                                class="mt-4 w-full bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium
-                                hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                                class="mt-4 w-full bg-gradient-to-r from-black to-gray-900 text-white px-4 py-2 rounded-md text-sm font-medium
+                                hover:from-gray-800 hover:to-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900
                                 transform transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
                             >
                                 Comprar
@@ -212,7 +213,8 @@ const props = defineProps({
     products: Object,
     categories: Array,
     departments: Array,
-    filters: Object
+    filters: Object,
+    auth: Object
 })
 
 const filters = ref({

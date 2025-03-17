@@ -23,14 +23,34 @@ class CustomerAuthController extends Controller
             'password' => 'required',
         ]);
 
+        // Verifica se o usuário existe
+        $customer = Customer::where('email', $credentials['email'])->first();
+        
+        \Log::info('Tentativa de login', [
+            'email' => $credentials['email'],
+            'customer_exists' => $customer ? 'sim' : 'não',
+            'password_provided' => !empty($credentials['password']) ? 'sim' : 'não'
+        ]);
+
+        if (!$customer) {
+            \Log::warning('Tentativa de login com email não encontrado', ['email' => $credentials['email']]);
+            return back()->withErrors([
+                'email' => 'Email não encontrado.',
+            ]);
+        }
+
+        // Tenta fazer login
         if (Auth::guard('customer')->attempt($credentials, $request->boolean('remember'))) {
+            \Log::info('Login bem-sucedido', ['email' => $credentials['email']]);
             $request->session()->regenerate();
 
             return redirect()->intended(route('customer.dashboard'));
         }
 
+        // Se chegou aqui, a senha está incorreta
+        \Log::warning('Tentativa de login com senha incorreta', ['email' => $credentials['email']]);
         return back()->withErrors([
-            'email' => 'As credenciais fornecidas não correspondem aos nossos registros.',
+            'email' => 'A senha está incorreta.',
         ]);
     }
 
@@ -46,8 +66,12 @@ class CustomerAuthController extends Controller
 
     public function dashboard()
     {
+        $customer = Auth::guard('customer')->user();
+
         return Inertia::render('Customers/Dashboard/Index', [
-            'customer' => Auth::guard('customer')->user(),
+            'customer' => $customer,
+            'ordersCount' => 0, // TODO: Implementar contagem de pedidos
+            'cartItemsCount' => 0, // TODO: Implementar contagem de itens no carrinho
         ]);
     }
 
@@ -107,42 +131,91 @@ class CustomerAuthController extends Controller
     {
         $customer = Auth::guard('customer')->user();
 
-        $request->validate([
-            'cep' => 'required|string',
-            'street' => 'required|string|max:255',
-            'number' => 'required|string|max:20',
-            'neighborhood' => 'required|string|max:255',
-            'city' => 'required|string|max:255',
-            'state' => 'required|string|size:2',
-            'complement' => 'nullable|string|max:255',
-            'current_password' => 'nullable|required_with:password',
-            'password' => 'nullable|min:8|confirmed',
-        ]);
-
-        if ($request->password && !Hash::check($request->current_password, $customer->password)) {
-            return back()->withErrors([
-                'current_password' => 'A senha atual está incorreta.',
+        // Se estiver alterando a senha, valida apenas os campos da senha
+        if ($request->filled('password')) {
+            $request->validate([
+                'current_password' => 'required',
+                'password' => 'required|min:8|confirmed',
+            ], [
+                'current_password.required' => 'A senha atual é obrigatória.',
+                'password.required' => 'A nova senha é obrigatória.',
+                'password.min' => 'A nova senha deve ter pelo menos 8 caracteres.',
+                'password.confirmed' => 'A confirmação da nova senha não corresponde.',
             ]);
-        }
 
-        $customer->update([
-            'cep' => $request->cep,
-            'street' => $request->street,
-            'number' => $request->number,
-            'neighborhood' => $request->neighborhood,
-            'city' => $request->city,
-            'state' => strtoupper($request->state),
-            'complement' => $request->complement,
-            // Nome, CPF e email não podem ser alterados
-        ]);
+            // Verifica se a senha atual está correta
+            if (!Hash::check($request->current_password, $customer->password)) {
+                return back()->withErrors([
+                    'current_password' => 'A senha atual está incorreta.',
+                ]);
+            }
 
-        if ($request->password) {
-            $customer->update([
+            // Atualiza a senha
+            $customer->forceFill([
                 'password' => Hash::make($request->password),
+            ])->save();
+
+            // Atualiza a sessão para manter o usuário logado
+            Auth::guard('customer')->login($customer);
+
+            return back()->with('success', 'Senha atualizada com sucesso!');
+        }
+        // Se estiver alterando o endereço, valida apenas os campos do endereço
+        else if ($request->filled(['cep', 'street', 'number'])) {
+            $request->validate([
+                'cep' => 'required|string',
+                'street' => 'required|string|max:255',
+                'number' => 'required|string|max:20',
+                'neighborhood' => 'required|string|max:255',
+                'city' => 'required|string|max:255',
+                'state' => 'required|string|size:2',
+                'complement' => 'nullable|string|max:255',
             ]);
+
+            // Atualiza o endereço
+            $customer->update([
+                'cep' => $request->cep,
+                'street' => $request->street,
+                'number' => $request->number,
+                'neighborhood' => $request->neighborhood,
+                'city' => $request->city,
+                'state' => strtoupper($request->state),
+                'complement' => $request->complement,
+                // Nome, CPF e email não podem ser alterados
+            ]);
+
+            return back()->with('success', 'Endereço atualizado com sucesso!');
         }
 
         return back()->with('success', 'Perfil atualizado com sucesso!');
+    }
+
+    public function orders()
+    {
+        $customer = Auth::guard('customer')->user();
+
+        return Inertia::render('Customers/Orders/Index', [
+            'customer' => $customer,
+            'orders' => [], // TODO: Implementar listagem de pedidos
+        ]);
+    }
+
+    public function favorites()
+    {
+        return Inertia::render('Customers/Favorites/Index', [
+            'customer' => Auth::guard('customer')->user(),
+            'favorites' => [], // TODO: Implementar listagem de favoritos
+        ]);
+    }
+
+    public function cart()
+    {
+        $customer = Auth::guard('customer')->user();
+
+        return Inertia::render('Customers/Cart/Index', [
+            'customer' => $customer,
+            'cartItems' => [], // TODO: Implementar listagem de itens do carrinho
+        ]);
     }
 
     public function showForgotPassword()

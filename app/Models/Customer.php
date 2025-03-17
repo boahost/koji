@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\Hash;
 
 class Customer extends Authenticatable
 {
-    use SoftDeletes;
+    use SoftDeletes, Notifiable;
 
-    use Notifiable;
+    protected $table = 'customers';
 
     protected $fillable = [
         'name',
@@ -42,13 +42,13 @@ class Customer extends Authenticatable
         parent::boot();
 
         static::creating(function ($customer) {
-            if ($customer->password) {
+            if ($customer->password && !Hash::isHashed($customer->password)) {
                 $customer->password = Hash::make($customer->password);
             }
         });
 
         static::updating(function ($customer) {
-            if ($customer->isDirty('password') && $customer->password) {
+            if ($customer->isDirty('password') && $customer->password && !Hash::isHashed($customer->password)) {
                 $customer->password = Hash::make($customer->password);
             }
         });

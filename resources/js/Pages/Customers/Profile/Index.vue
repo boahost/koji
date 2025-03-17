@@ -11,14 +11,22 @@ const props = defineProps({
     customer: Object,
 });
 
-const form = useForm({
+// Formulário para atualização de endereço
+const addressForm = useForm({
     name: props.customer.name,
     email: props.customer.email,
     document: props.customer.document,
-    cep: props.customer.cep,
-    street: props.customer.street,
-    number: props.customer.number,
-    complement: props.customer.complement,
+    cep: props.customer.cep || '',
+    street: props.customer.street || '',
+    number: props.customer.number || '',
+    neighborhood: props.customer.neighborhood || '',
+    city: props.customer.city || '',
+    state: props.customer.state || '',
+    complement: props.customer.complement || '',
+});
+
+// Formulário para atualização de senha
+const passwordForm = useForm({
     current_password: '',
     password: '',
     password_confirmation: '',
@@ -27,10 +35,30 @@ const form = useForm({
 const loading = ref(false);
 const showPasswordForm = ref(false);
 
-const submit = () => {
+const updateAddress = () => {
     loading.value = true;
-    form.put(route('customer.profile.update'), {
+    addressForm.put(route('customer.profile.update'), {
         onFinish: () => loading.value = false,
+        preserveScroll: true,
+    });
+};
+
+const updatePassword = () => {
+    if (passwordForm.password !== passwordForm.password_confirmation) {
+        passwordForm.errors.password_confirmation = 'A confirmação da senha não corresponde.';
+        return;
+    }
+
+    loading.value = true;
+    passwordForm.put(route('customer.profile.update'), {
+        onSuccess: () => {
+            loading.value = false;
+            showPasswordForm.value = false;
+            passwordForm.reset();
+        },
+        onError: () => {
+            loading.value = false;
+        },
         preserveScroll: true,
     });
 };
@@ -39,11 +67,11 @@ const submit = () => {
 <template>
     <Head title="Perfil" />
 
-    <CustomerDashboardLayout>
+    <CustomerDashboardLayout :customer="customer">
         <div class="animate-fade-in-up">
             <!-- Header -->
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-black to-gray-900 bg-clip-text text-transparent">
                     Meu Perfil
                 </h1>
                 <p class="mt-2 text-gray-600">
@@ -52,7 +80,8 @@ const submit = () => {
             </div>
 
             <!-- Profile Form -->
-            <form @submit.prevent="submit" class="mt-8 space-y-6">
+            <!-- Formulário de Endereço -->
+            <form @submit.prevent="updateAddress" class="mt-8 space-y-6">
                 <!-- Personal Information -->
                 <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-6">
                     <h2 class="text-lg font-medium text-gray-900">
@@ -65,7 +94,7 @@ const submit = () => {
                         <TextInput
                             id="name"
                             type="text"
-                            v-model="form.name"
+                            v-model="addressForm.name"
                             class="mt-1 block w-full bg-gray-50 cursor-not-allowed"
                             disabled
                         />
@@ -78,7 +107,7 @@ const submit = () => {
                         <TextInput
                             id="email"
                             type="email"
-                            v-model="form.email"
+                            v-model="addressForm.email"
                             class="mt-1 block w-full bg-gray-50 cursor-not-allowed"
                             disabled
                         />
@@ -89,10 +118,10 @@ const submit = () => {
                     <div class="space-y-1">
                         <InputLabel for="document" value="CPF" />
                         <IMaskComponent
-                            v-model="form.document"
+                            v-model="addressForm.document"
                             :mask="'000.000.000-00'"
                             :unmask="true"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-50 cursor-not-allowed"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm bg-gray-50 cursor-not-allowed"
                             disabled
                         />
                         <p class="mt-1 text-sm text-gray-500">O CPF não pode ser alterado</p>
@@ -109,12 +138,12 @@ const submit = () => {
                     <div class="space-y-1">
                         <InputLabel for="cep" value="CEP" />
                         <IMaskComponent
-                            v-model="form.cep"
+                            v-model="addressForm.cep"
                             :mask="'00000-000'"
                             :unmask="true"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm"
                         />
-                        <InputError :message="form.errors.cep" class="mt-1" />
+                        <InputError :message="addressForm.errors.cep" class="mt-1" />
                     </div>
 
                     <!-- Street -->
@@ -123,11 +152,11 @@ const submit = () => {
                         <TextInput
                             id="street"
                             type="text"
-                            v-model="form.street"
+                            v-model="addressForm.street"
                             class="mt-1 block w-full"
                             required
                         />
-                        <InputError :message="form.errors.street" class="mt-1" />
+                        <InputError :message="addressForm.errors.street" class="mt-1" />
                     </div>
 
                     <!-- Number -->
@@ -136,11 +165,11 @@ const submit = () => {
                         <TextInput
                             id="number"
                             type="text"
-                            v-model="form.number"
+                            v-model="addressForm.number"
                             class="mt-1 block w-full"
                             required
                         />
-                        <InputError :message="form.errors.number" class="mt-1" />
+                        <InputError :message="addressForm.errors.number" class="mt-1" />
                     </div>
 
                     <!-- Complement -->
@@ -149,14 +178,91 @@ const submit = () => {
                         <TextInput
                             id="complement"
                             type="text"
-                            v-model="form.complement"
+                            v-model="addressForm.complement"
                             class="mt-1 block w-full"
                         />
-                        <InputError :message="form.errors.complement" class="mt-1" />
+                        <InputError :message="addressForm.errors.complement" class="mt-1" />
+                    </div>
+
+                    <!-- Neighborhood -->
+                    <div class="space-y-1">
+                        <InputLabel for="neighborhood" value="Bairro" />
+                        <TextInput
+                            id="neighborhood"
+                            type="text"
+                            v-model="addressForm.neighborhood"
+                            class="mt-1 block w-full"
+                            required
+                        />
+                        <InputError :message="addressForm.errors.neighborhood" class="mt-1" />
+                    </div>
+
+                    <!-- City -->
+                    <div class="space-y-1">
+                        <InputLabel for="city" value="Cidade" />
+                        <TextInput
+                            id="city"
+                            type="text"
+                            v-model="addressForm.city"
+                            class="mt-1 block w-full"
+                            required
+                        />
+                        <InputError :message="addressForm.errors.city" class="mt-1" />
+                    </div>
+
+                    <!-- State -->
+                    <div class="space-y-1">
+                        <InputLabel for="state" value="Estado" />
+                        <TextInput
+                            id="state"
+                            type="text"
+                            v-model="addressForm.state"
+                            class="mt-1 block w-full"
+                            maxlength="2"
+                            style="text-transform: uppercase;"
+                            required
+                        />
+                        <InputError :message="addressForm.errors.state" class="mt-1" />
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex items-center gap-4 mt-6">
+                        <button
+                            type="submit"
+                            class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            :disabled="addressForm.processing"
+                        >
+                            <span v-if="addressForm.processing">Atualizando...</span>
+                            <span v-else>Atualizar Endereço</span>
+                        </button>
+
+                        <Transition
+                            enter-active-class="transition ease-in-out"
+                            enter-from-class="opacity-0"
+                            leave-active-class="transition ease-in-out"
+                            leave-to-class="opacity-0"
+                        >
+                            <p v-if="addressForm.recentlySuccessful" class="text-sm text-gray-600">
+                                Endereço atualizado com sucesso!
+                            </p>
+                        </Transition>
                     </div>
                 </div>
+            </form>
 
-                <!-- Password -->
+            <!-- Botão para exibir formulário de senha -->
+            <div class="mt-8" v-if="!showPasswordForm">
+                <button
+                    type="button"
+                    class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                    @click="showPasswordForm = true"
+                >
+                    Alterar Senha
+                </button>
+            </div>
+
+            <!-- Formulário de Senha -->
+            <form @submit.prevent="updatePassword" class="mt-8 space-y-6" v-if="showPasswordForm">
                 <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                     <div class="flex items-center justify-between">
                         <h2 class="text-lg font-medium text-gray-900">
@@ -164,25 +270,25 @@ const submit = () => {
                         </h2>
                         <button
                             type="button"
-                            class="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
-                            @click="showPasswordForm = !showPasswordForm"
+                            class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-500 transition-colors duration-200 bg-gray-100 hover:bg-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                            @click="showPasswordForm = false"
                         >
-                            {{ showPasswordForm ? 'Cancelar' : 'Alterar' }}
+                            Cancelar
                         </button>
                     </div>
 
-                    <div v-if="showPasswordForm" class="mt-6 space-y-6">
+                    <div class="mt-6 space-y-6">
                         <!-- Current Password -->
                         <div class="space-y-1">
                             <InputLabel for="current_password" value="Senha atual" />
                             <TextInput
                                 id="current_password"
                                 type="password"
-                                v-model="form.current_password"
+                                v-model="passwordForm.current_password"
                                 class="mt-1 block w-full"
                                 required
                             />
-                            <InputError :message="form.errors.current_password" class="mt-1" />
+                            <InputError :message="passwordForm.errors.current_password" class="mt-1" />
                         </div>
 
                         <!-- New Password -->
@@ -191,11 +297,11 @@ const submit = () => {
                             <TextInput
                                 id="password"
                                 type="password"
-                                v-model="form.password"
+                                v-model="passwordForm.password"
                                 class="mt-1 block w-full"
                                 required
                             />
-                            <InputError :message="form.errors.password" class="mt-1" />
+                            <InputError :message="passwordForm.errors.password" class="mt-1" />
                         </div>
 
                         <!-- Confirm Password -->
@@ -204,35 +310,38 @@ const submit = () => {
                             <TextInput
                                 id="password_confirmation"
                                 type="password"
-                                v-model="form.password_confirmation"
+                                v-model="passwordForm.password_confirmation"
                                 class="mt-1 block w-full"
                                 required
                             />
-                            <InputError :message="form.errors.password_confirmation" class="mt-1" />
+                            <InputError :message="passwordForm.errors.password_confirmation" class="mt-1" />
+                        </div>
+
+                        <div class="flex items-center gap-4">
+                            <button
+                                type="submit"
+                                class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                :disabled="passwordForm.processing"
+                            >
+                                <span v-if="passwordForm.processing">Alterando...</span>
+                                <span v-else>Alterar Senha</span>
+                            </button>
+
+                            <Transition
+                                enter-active-class="transition ease-in-out"
+                                enter-from-class="opacity-0"
+                                leave-active-class="transition ease-in-out"
+                                leave-to-class="opacity-0"
+                            >
+                                <p v-if="passwordForm.recentlySuccessful" class="text-sm text-gray-600">
+                                    Senha alterada com sucesso!
+                                </p>
+                            </Transition>
                         </div>
                     </div>
                 </div>
-
-                <!-- Submit Button -->
-                <div class="flex justify-end">
-                    <button
-                        type="submit"
-                        :disabled="form.processing"
-                        :class="{ 'opacity-75 cursor-not-allowed': form.processing }"
-                        class="inline-flex justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 px-8 text-sm font-semibold text-white shadow-sm hover:from-indigo-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 ease-in-out overflow-hidden relative"
-                    >
-                        <!-- Loading Spinner -->
-                        <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-indigo-600 to-purple-600">
-                            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                        </div>
-                        
-                        <span :class="{ 'opacity-0': loading }">Salvar alterações</span>
-                    </button>
-                </div>
             </form>
+
         </div>
     </CustomerDashboardLayout>
 </template>
