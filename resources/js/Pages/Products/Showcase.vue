@@ -225,18 +225,8 @@ const filters = ref({
 })
 
 const sortBy = ref('newest')
-// Mostrar filtros por padrão apenas em desktop
+// Iniciar com filtros escondidos
 const showFilters = ref(false)
-
-// Atualizar showFilters baseado no tamanho da tela
-onMounted(() => {
-    showFilters.value = window.innerWidth >= 1024
-    window.addEventListener('resize', () => {
-        if (window.innerWidth >= 1024) {
-            showFilters.value = true
-        }
-    })
-})
 const toggleFilters = () => {
     showFilters.value = !showFilters.value
     // Bloqueia scroll do body quando o filtro está aberto em mobile
