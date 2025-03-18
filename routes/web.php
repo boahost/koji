@@ -11,6 +11,7 @@ use App\Http\Controllers\ResellerController;
 use App\Http\Controllers\ResellerAuthController;
 use App\Http\Controllers\ResellerDashboardController;
 use App\Http\Controllers\ProductShowcaseController;
+use App\Http\Controllers\CartController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -83,7 +84,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // Rotas do Revendedor
 // Rotas públicas
 Route::get('/produtos', [ProductShowcaseController::class, 'index'])->name('products');
-Route::get('/carrinho', [ProductShowcaseController::class, 'cart'])->name('customer.cart');
+
+// Rotas do carrinho
+Route::middleware('auth:customer')->group(function () {
+    Route::get('/carrinho', [CartController::class, 'index'])->name('customer.cart');
+    Route::post('/cart/add/{product}', [CartController::class, 'addToCart'])->name('cart.add');
+    Route::get('/cart/count', [CartController::class, 'getCartCount'])->name('cart.count');
+    Route::put('/cart/items/{cartItem}/quantity', [CartController::class, 'updateQuantity'])->name('cart.update.quantity');
+    Route::delete('/cart/items/{cartItem}', [CartController::class, 'removeItem'])->name('cart.remove');
+});
 
 // Rotas de autenticação do cliente
 Route::middleware('guest:customer')->prefix('cliente')->group(function () {

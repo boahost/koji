@@ -8,6 +8,7 @@ import {
     UserIcon,
     ArrowRightOnRectangleIcon,
 } from '@heroicons/vue/24/outline';
+import AppHeader from '@/Components/AppHeader.vue';
 
 const props = defineProps({
     customer: Object,
@@ -23,34 +24,25 @@ const navigation = [
 
 <template>
     <div class="min-h-screen bg-gray-50 pb-16">
-        <!-- Top Navigation -->
-        <nav class="bg-white shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex items-center">
-                        <Link :href="route('products')" class="text-xl font-bold bg-gradient-to-r from-black to-gray-900 bg-clip-text text-transparent">
-                            DF Store
-                        </Link>
-                    </div>
-
-                    <!-- Welcome and Logout Button -->
-                    <div class="flex items-center space-x-4">
-                        <span class="text-gray-600">
-                            Olá, {{ customer?.name?.split(' ')[0] }}
-                        </span>
-                        <Link
-                            :href="route('customer.logout')"
-                            method="post"
-                            as="button"
-                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-gradient-to-r from-black to-gray-900 hover:from-gray-800 hover:to-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-all duration-200 ease-in-out"
-                        >
-                            <ArrowRightOnRectangleIcon class="h-5 w-5 mr-1" />
-                            Sair
-                        </Link>
-                    </div>
-                </div>
+        <AppHeader />
+        
+        <!-- Customer Welcome -->
+        <div class="bg-white border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+                <span class="text-sm text-gray-600">
+                    Olá, <span class="font-medium text-gray-900">{{ customer?.name?.split(' ')[0] }}</span>
+                </span>
+                <Link
+                    :href="route('customer.logout')"
+                    method="post"
+                    as="button"
+                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-full text-white bg-[#231F20] hover:bg-[#231F20]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#231F20] transition-colors duration-200"
+                >
+                    <ArrowRightOnRectangleIcon class="h-4 w-4 mr-1.5" />
+                    Sair
+                </Link>
             </div>
-        </nav>
+        </div>
 
         <!-- Main Content -->
         <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -58,27 +50,27 @@ const navigation = [
         </main>
 
         <!-- Bottom Navigation -->
-        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+        <nav class="fixed bottom-0 left-0 right-0 bg-[#231F20] border-t border-white/10 z-50">
             <div class="max-w-7xl mx-auto px-4">
                 <div class="flex justify-around py-2">
                     <Link
                         v-for="item in navigation"
                         :key="item.name"
                         :href="item.href"
-                        class="flex flex-col items-center group transition-all duration-200 ease-in-out"
+                        class="flex flex-col items-center group transition-all duration-200"
                         :class="{
-                            'text-black': route().current(item.href),
-                            'text-gray-500 hover:text-black': !route().current(item.href)
+                            'text-white': route().current(item.href),
+                            'text-gray-400 hover:text-white': !route().current(item.href)
                         }"
                     >
-                        <div class="p-2 rounded-full transition-all duration-200 ease-in-out"
+                        <div class="p-2.5 rounded-full transition-all duration-200"
                             :class="{
-                                'bg-gray-100 scale-110': route().current(item.href),
-                                'group-hover:bg-gray-100 group-hover:scale-110': !route().current(item.href)
+                                'bg-white/20': route().current(item.href),
+                                'group-hover:bg-white/10': !route().current(item.href)
                             }">
-                            <component :is="item.icon" class="w-6 h-6" />
+                            <component :is="item.icon" class="w-5 h-5" />
                         </div>
-                        <span class="text-xs font-medium mt-1">{{ item.name }}</span>
+                        <span class="text-[10px] font-medium mt-1">{{ item.name }}</span>
                     </Link>
                 </div>
             </div>

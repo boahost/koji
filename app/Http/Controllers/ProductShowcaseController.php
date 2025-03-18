@@ -12,11 +12,9 @@ class ProductShowcaseController extends Controller
 {
     public function cart()
     {
-        return Inertia::render('Customers/Cart/Index', [
+        return Inertia::render('Products/Cart', [
             'cartItems' => [], // Aqui virá a lógica do carrinho
-            'auth' => [
-                'customer' => auth('customer')->user(),
-            ],
+            'auth' => auth()->guard('customer')->user()
         ]);
     }
     public function index(Request $request)

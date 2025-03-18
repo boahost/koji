@@ -70,8 +70,8 @@ const updatePassword = () => {
     <CustomerDashboardLayout :customer="customer">
         <div class="animate-fade-in-up">
             <!-- Header -->
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h1 class="text-2xl font-bold bg-gradient-to-r from-black to-gray-900 bg-clip-text text-transparent">
+            <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+                <h1 class="text-2xl font-bold text-[#231F20]">
                     Meu Perfil
                 </h1>
                 <p class="mt-2 text-gray-600">
@@ -83,8 +83,8 @@ const updatePassword = () => {
             <!-- Formulário de Endereço -->
             <form @submit.prevent="updateAddress" class="mt-8 space-y-6">
                 <!-- Personal Information -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-6">
-                    <h2 class="text-lg font-medium text-gray-900">
+                <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-100 space-y-6">
+                    <h2 class="text-lg font-medium text-[#231F20]">
                         Informações Pessoais
                     </h2>
 
@@ -129,8 +129,8 @@ const updatePassword = () => {
                 </div>
 
                 <!-- Address -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-6">
-                    <h2 class="text-lg font-medium text-gray-900">
+                <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-100 space-y-6">
+                    <h2 class="text-lg font-medium text-[#231F20]">
                         Endereço
                     </h2>
 
@@ -229,7 +229,7 @@ const updatePassword = () => {
                     <div class="flex items-center gap-4 mt-6">
                         <button
                             type="submit"
-                            class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="px-4 py-2 bg-[#231F20] text-white text-sm font-medium rounded-full hover:bg-[#231F20]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#231F20] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             :disabled="addressForm.processing"
                         >
                             <span v-if="addressForm.processing">Atualizando...</span>
@@ -254,7 +254,7 @@ const updatePassword = () => {
             <div class="mt-8" v-if="!showPasswordForm">
                 <button
                     type="button"
-                    class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                    class="px-4 py-2 bg-[#231F20] text-white text-sm font-medium rounded-full hover:bg-[#231F20]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#231F20] transition-colors duration-200"
                     @click="showPasswordForm = true"
                 >
                     Alterar Senha
@@ -270,7 +270,7 @@ const updatePassword = () => {
                         </h2>
                         <button
                             type="button"
-                            class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-500 transition-colors duration-200 bg-gray-100 hover:bg-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                            class="px-4 py-2 text-sm font-medium text-[#231F20]/70 hover:text-[#231F20]/90 transition-colors duration-200 bg-gray-100 hover:bg-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#231F20]"
                             @click="showPasswordForm = false"
                         >
                             Cancelar
@@ -320,7 +320,7 @@ const updatePassword = () => {
                         <div class="flex items-center gap-4">
                             <button
                                 type="submit"
-                                class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                class="px-4 py-2 bg-[#231F20] text-white text-sm font-medium rounded-full hover:bg-[#231F20]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#231F20] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 :disabled="passwordForm.processing"
                             >
                                 <span v-if="passwordForm.processing">Alterando...</span>
