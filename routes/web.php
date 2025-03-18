@@ -12,6 +12,7 @@ use App\Http\Controllers\ResellerAuthController;
 use App\Http\Controllers\ResellerDashboardController;
 use App\Http\Controllers\ProductShowcaseController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\ShippingMethodController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -74,6 +75,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{reseller}', [ResellerController::class, 'update'])->name('update');
         Route::delete('/{reseller}', [ResellerController::class, 'destroy'])->name('destroy');
     });
+
+    // Shipping Method Routes
+    Route::get('/shipping-methods', [ShippingMethodController::class, 'index'])->name('shipping-methods.index');
+    Route::get('/shipping-methods/create', [ShippingMethodController::class, 'create'])->name('shipping-methods.create');
+    Route::post('/shipping-methods', [ShippingMethodController::class, 'store'])->name('shipping-methods.store');
+    Route::get('/shipping-methods/{shippingMethod}/edit', [ShippingMethodController::class, 'edit'])->name('shipping-methods.edit');
+    Route::put('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'update'])->name('shipping-methods.update');
+    Route::delete('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'destroy'])->name('shipping-methods.destroy');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

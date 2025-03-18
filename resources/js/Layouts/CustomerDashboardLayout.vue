@@ -27,7 +27,7 @@ const navigation = [
         <AppHeader />
         
         <!-- Customer Welcome -->
-        <div class="bg-white border-b border-gray-200">
+        <div v-if="customer" class="bg-white border-b border-gray-200">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
                 <span class="text-sm text-gray-600">
                     Olá, <span class="font-medium text-gray-900">{{ customer?.name?.split(' ')[0] }}</span>

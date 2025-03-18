@@ -318,7 +318,8 @@ import {
     TagIcon,
     BuildingOfficeIcon,
     UsersIcon,
-    UserGroupIcon
+    UserGroupIcon,
+    TruckIcon
 } from '@heroicons/vue/24/outline'
 import { Link, usePage } from '@inertiajs/vue3'
 
@@ -366,6 +367,15 @@ const navigation = [
         submenu: [
             { name: 'Listar', href: route('departments'), current: route().current('departments') },
             { name: 'Cadastrar', href: route('departments.create'), current: route().current('departments.create') },
+        ]
+    },
+    {
+        name: 'Fretes',
+        icon: TruckIcon,
+        current: route().current('shipping-methods.*'),
+        submenu: [
+            { name: 'Listar', href: route('shipping-methods.index'), current: route().current('shipping-methods.index') },
+            { name: 'Cadastrar', href: route('shipping-methods.create'), current: route().current('shipping-methods.create') },
         ]
     },
     {

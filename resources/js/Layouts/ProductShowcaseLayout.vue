@@ -9,7 +9,7 @@
             <div class="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
                     <p class="text-sm text-gray-600">
-                        Olá, <span class="font-medium text-[#231F20]">{{ auth.name }}</span>!
+                        Olá, <span class="font-medium text-[#231F20]">{{ auth.name ?? auth.customer.name }}</span>!
                     </p>
                     <Link 
                         :href="route('customer.logout')"
@@ -103,7 +103,7 @@
                             }">
                             <UserIcon class="w-5 h-5" />
                         </div>
-                        <span class="text-[10px] font-medium mt-1 truncate max-w-[60px] text-center">{{ auth ? auth.name : 'Entrar' }}</span>
+                        <span class="text-[10px] font-medium mt-1 truncate max-w-[60px] text-center">{{ (auth.name ?? auth.customer.name) ? (auth.name ?? auth.customer.name) : 'Entrar'  }}</span>
                     </Link>
                 </div>
             </div>
