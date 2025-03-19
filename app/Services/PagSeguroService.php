@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Http;    
 use Illuminate\Support\Facades\Log;
 
 class PagSeguroService
@@ -12,14 +12,12 @@ class PagSeguroService
     protected $token;
     protected $email;
     protected $isSandbox;
-    protected $publicKey;
 
     public function __construct()
     {
         $this->isSandbox = config('pagseguro.sandbox', true);
         $this->token = config('pagseguro.token');
         $this->email = config('pagseguro.email');
-        $this->publicKey = config('pagseguro.public_key');
         
         // Define a URL base de acordo com o ambiente
         $this->baseUrl = $this->isSandbox 
@@ -91,6 +89,13 @@ class PagSeguroService
                 'Authorization' => $this->token,
                 'Content-Type' => 'application/json'
             ])->post($this->baseUrl . '/charges', $payload);
+
+            // Log da resposta para debug
+            \Log::info('PagSeguro Credit Card Response', [
+                'payload' => $payload,
+                'response' => $response->json(),
+                'status' => $response->status()
+            ]);
 
             // Processa a resposta
             $responseData = $response->json();
@@ -184,6 +189,13 @@ class PagSeguroService
                 'Authorization' => $this->token,
                 'Content-Type' => 'application/json'
             ])->post($this->baseUrl . '/orders', $payload);
+
+            // Log da resposta para debug
+            \Log::info('PagSeguro PIX Response', [
+                'payload' => $payload,
+                'response' => $response->json(),
+                'status' => $response->status()
+            ]);
 
             // Processa a resposta
             $responseData = $response->json();

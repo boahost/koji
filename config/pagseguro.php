@@ -19,7 +19,4 @@ return [
 
     // Email da conta PagSeguro
     'email' => env('PAGSEGURO_EMAIL', ''),
-
-    // Chave pública para criptografia do cartão (checkout transparente)
-    'public_key' => env('PAGSEGURO_PUBLIC_KEY', ''),
 ];

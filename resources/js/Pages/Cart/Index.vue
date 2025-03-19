@@ -306,7 +306,7 @@
                                 
                                 <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                                     <div class="flex">
-                                        <ExclamationTriangleIcon class="w-5 h-5 text-yellow-500 flex-shrink-0" />
+                                        <ExclamationTriangleIcon class="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
                                         <div class="ml-3">
                                             <h3 class="text-sm font-medium text-yellow-800">Informações sobre o PIX</h3>
                                             <div class="mt-2 text-sm text-yellow-700 space-y-1">
@@ -344,12 +344,12 @@
                                 </div>
                             </div>
                             <div class="ml-3 text-sm">
-                                <p class="font-medium text-gray-800">{{ auth.customer.name }}</p>
-                                <p class="mt-1 text-gray-600">{{ auth.customer.street }}, {{ auth.customer.number }}</p>
-                                <p v-if="auth.customer.complement" class="text-gray-600">{{ auth.customer.complement }}</p>
-                                <p class="text-gray-600">{{ auth.customer.neighborhood }}</p>
-                                <p class="text-gray-600">{{ auth.customer.city }} - {{ auth.customer.state }}</p>
-                                <p class="text-gray-600">CEP: {{ auth.customer.cep }}</p>
+                                <p class="font-medium text-gray-800">{{ props.auth.customer.name }}</p>
+                                <p class="mt-1 text-gray-600">{{ props.auth.customer.street }}, {{ props.auth.customer.number }}</p>
+                                <p v-if="props.auth.customer.complement" class="text-gray-600">{{ props.auth.customer.complement }}</p>
+                                <p class="text-gray-600">{{ props.auth.customer.neighborhood }}</p>
+                                <p class="text-gray-600">{{ props.auth.customer.city }} - {{ props.auth.customer.state }}</p>
+                                <p class="text-gray-600">CEP: {{ props.auth.customer.cep }}</p>
                             </div>
                         </div>
                     </div>
@@ -403,6 +403,7 @@
                                 'bg-gray-300 text-gray-500 cursor-not-allowed'
                         ]"
                         :disabled="!selectedShipping || !auth.customer || !auth.customer.street"
+                        @click="processPayment"
                     >
                         <span v-if="!auth.customer || !auth.customer.street">Cadastre um endereço de entrega</span>
                         <span v-else-if="!selectedShipping">Selecione um método de frete</span>
@@ -555,6 +556,109 @@ const removeItem = async (item) => {
         console.error('Erro ao remover item:', error)
     } finally {
         removingItem.value[item.id] = false
+    }
+}
+
+// Processa o pagamento
+const processPayment = async () => {
+    try {
+        // Verifica se todos os campos necessários estão preenchidos para cartão de crédito
+        if (selectedPaymentMethod.value === 'credit-card') {
+            if (!cardNumber.value || !cardHolder.value || !cardExpiryMonth.value || !cardExpiryYear.value || !cardCvv.value) {
+                alert('Por favor, preencha todos os campos do cartão de crédito');
+                return;
+            }
+        }
+
+        // Verifica se o método de frete foi selecionado
+        if (!selectedShipping.value || !selectedShipping.value.id) {
+            alert('Por favor, selecione um método de frete');
+            return;
+        }
+
+        // Verifica se tem endereço completo
+        const customer = props.auth.customer;
+        if (!customer || 
+            !customer.street || 
+            !customer.number || 
+            !customer.city || 
+            !customer.state || 
+            !customer.cep) {
+            console.log('Campos faltando:', {
+                street: !customer.street,
+                number: !customer.number,
+                city: !customer.city,
+                state: !customer.state,
+                cep: !customer.cep
+            });
+            alert('Por favor, complete seu endereço antes de continuar');
+            return;
+        }
+        
+        // Prepara os dados do pagamento
+        const paymentData = {
+            shipping_method_id: selectedShipping.value.id,
+            address: customer.street + ', ' + customer.number + (customer.complement ? ' - ' + customer.complement : ''),
+            city: customer.city,
+            state: customer.state,
+            zip_code: customer.cep.replace(/\D/g, '') // Enviando como zip_code para o backend
+        };
+
+        console.log('Dados do pagamento:', paymentData);
+        
+        // Adiciona os dados do cartão se for pagamento com cartão de crédito
+        if (selectedPaymentMethod.value === 'credit-card') {
+            Object.assign(paymentData, {
+                card_number: cardNumber.value.replace(/\s/g, ''),
+                card_holder_name: cardHolder.value,
+                card_expiration_month: cardExpiryMonth.value,
+                card_expiration_year: cardExpiryYear.value,
+                card_security_code: cardCvv.value,
+                installments: 1 // Por padrão, pagamento à vista
+            });
+        }
+        
+        // Envia a requisição para o endpoint apropriado
+        const endpoint = selectedPaymentMethod.value === 'credit-card' 
+            ? '/orders/process-credit-card' 
+            : '/orders/process-pix';
+            
+        const response = await axios.post(endpoint, paymentData);
+        
+        // Redireciona com base na resposta
+        if (response.data.redirect) {
+            window.location.href = response.data.redirect;
+        } else if (response.data.success) {
+            // Exibe mensagem de sucesso e redireciona para a página de pedidos
+            alert('Pagamento processado com sucesso!');
+            window.location.href = '/orders';
+        }
+    } catch (error) {
+        console.error('Erro ao processar pagamento:', error);
+        if (error.response) {
+            // O servidor respondeu com um status de erro
+            console.error('Resposta do servidor:', error.response.data);
+            console.error('Status do erro:', error.response.status);
+            
+            // Exibe mensagens de erro específicas
+            if (error.response.data.errors) {
+                const errorMessages = Object.values(error.response.data.errors)
+                    .flat()
+                    .join('\n');
+                alert('Erros de validação:\n' + errorMessages);
+            } else {
+                alert('Erro ao processar o pagamento. Status: ' + error.response.status + 
+                      (error.response.data.message ? '\nMensagem: ' + error.response.data.message : ''));
+            }
+        } else if (error.request) {
+            // A requisição foi feita mas não houve resposta
+            console.error('Sem resposta do servidor');
+            alert('Não foi possível conectar ao servidor. Verifique sua conexão.');
+        } else {
+            // Algo aconteceu na configuração da requisição
+            console.error('Erro na configuração da requisição:', error.message);
+            alert('Erro ao configurar a requisição: ' + error.message);
+        }
     }
 }
 

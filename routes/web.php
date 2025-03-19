@@ -13,6 +13,7 @@ use App\Http\Controllers\ResellerDashboardController;
 use App\Http\Controllers\ProductShowcaseController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ShippingMethodController;
+use App\Http\Controllers\OrderController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -96,11 +97,18 @@ Route::get('/produtos', [ProductShowcaseController::class, 'index'])->name('prod
 
 // Rotas do carrinho
 Route::middleware('auth:customer')->group(function () {
-    Route::get('/carrinho', [CartController::class, 'index'])->name('customer.cart');
+    Route::get('/carrinho', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/add/{product}', [CartController::class, 'addToCart'])->name('cart.add');
     Route::get('/cart/count', [CartController::class, 'getCartCount'])->name('cart.count');
     Route::put('/cart/items/{cartItem}/quantity', [CartController::class, 'updateQuantity'])->name('cart.update.quantity');
-    Route::delete('/cart/items/{cartItem}', [CartController::class, 'removeItem'])->name('cart.remove');
+    Route::delete('/cart/items/{cartItem}', [CartController::class, 'removeFromCart'])->name('cart.remove');
+
+    // Rotas de pagamento
+    Route::post('/orders/process-credit-card', [OrderController::class, 'processCreditCardPayment'])->name('orders.process.credit-card');
+    Route::post('/orders/process-pix', [OrderController::class, 'processPixPayment'])->name('orders.process.pix');
+    Route::get('/orders/{order}/pix', [OrderController::class, 'showPixPayment'])->name('orders.pix');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
 });
 
 // Rotas de autenticação do cliente
@@ -128,9 +136,6 @@ Route::middleware('auth:customer')->prefix('cliente')->group(function () {
     Route::get('/perfil', [CustomerAuthController::class, 'profile'])->name('customer.profile');
     Route::put('/perfil', [CustomerAuthController::class, 'updateProfile'])->name('customer.profile.update');
     
-    // Rotas do carrinho
-    Route::get('/carrinho', [CustomerAuthController::class, 'cart'])->name('cart');
-    
     // Rotas de pedidos
     Route::get('/pedidos', [CustomerAuthController::class, 'orders'])->name('customer.orders');
 });
@@ -146,6 +151,9 @@ Route::middleware(['web', 'auth:reseller'])->prefix('revendedor')->group(functio
     Route::get('perfil', [ResellerDashboardController::class, 'profile'])->name('reseller.profile');
 });
 
-
+// Webhook do PagSeguro (público)
+Route::post('/webhooks/pagseguro', [OrderController::class, 'webhook'])
+    ->name('webhooks.pagseguro')
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
 
 require __DIR__.'/auth.php';

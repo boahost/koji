@@ -112,6 +112,7 @@ class OrderController extends Controller
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $cartItem->product_id,
+                    'product_name' => $cartItem->product->name,
                     'quantity' => $cartItem->quantity,
                     'price' => $cartItem->price,
                     'total' => $cartItem->quantity * $cartItem->price
@@ -219,6 +220,7 @@ class OrderController extends Controller
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $cartItem->product_id,
+                    'product_name' => $cartItem->product->name,
                     'quantity' => $cartItem->quantity,
                     'price' => $cartItem->price,
                     'total' => $cartItem->quantity * $cartItem->price
@@ -226,17 +228,16 @@ class OrderController extends Controller
             }
             
             // Processa o pagamento PIX
-            $pagSeguroService = new PagSeguroService();
-            $pixResult = $pagSeguroService->createPixPayment($order);
+            $paymentResult = $this->pagSeguroService->createPixPayment($order);
             
             // Cria o registro de pagamento
             $payment = Payment::create([
                 'order_id' => $order->id,
                 'payment_method' => 'pix',
-                'transaction_id' => $pixResult['transaction_id'] ?? null,
-                'status' => 'pending',
+                'transaction_id' => $paymentResult['transaction_id'] ?? null,
+                'status' => $paymentResult['status'] ?? 'pending',
                 'amount' => $total,
-                'gateway_response' => json_encode($pixResult)
+                'gateway_response' => json_encode($paymentResult)
             ]);
             
             // Limpa o carrinho
@@ -321,6 +322,46 @@ class OrderController extends Controller
         
         return Inertia::render('Orders/Index', [
             'orders' => $orders
+        ]);
+    }
+
+    /**
+     * Exibe a página de pagamento PIX
+     */
+    public function showPixPayment(Order $order)
+    {
+        // Verifica se o pedido pertence ao cliente logado
+        if ($order->customer_id !== Auth::guard('customer')->id()) {
+            return redirect()->route('cart.index')->with('error', 'Pedido não encontrado.');
+        }
+
+        // Verifica se o pedido está pendente
+        if ($order->status !== 'pending') {
+            return redirect()->route('cart.index')->with('error', 'Este pedido não está mais pendente.');
+        }
+
+        // Recupera o pagamento PIX
+        $payment = $order->payments()->where('payment_method', 'pix')->latest()->first();
+        
+        if (!$payment) {
+            return redirect()->route('cart.index')->with('error', 'Pagamento PIX não encontrado.');
+        }
+
+        // Decodifica a resposta do gateway
+        $gatewayResponse = $payment->gateway_response;
+
+        return Inertia::render('Orders/PixPayment', [
+            'order' => [
+                'id' => $order->id,
+                'total' => $order->total,
+                'status' => $order->status,
+                'created_at' => $order->created_at->format('d/m/Y H:i:s')
+            ],
+            'pix' => [
+                'qr_code' => $gatewayResponse['qrcode_text'] ?? null,
+                'qr_code_base64' => $gatewayResponse['qrcode_image'] ?? null,
+                'expiration_date' => $payment->pix_expiration_date?->format('Y-m-d H:i:s')
+            ]
         ]);
     }
 

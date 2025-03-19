@@ -61,6 +61,14 @@ class Order extends Model
     }
 
     /**
+     * Get the payments for the order.
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
      * Get the payment for the order.
      */
     public function payment(): HasOne
