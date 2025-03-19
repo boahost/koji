@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\ShippingMethod;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -25,9 +26,17 @@ class CartController extends Controller
             return $item->quantity * $item->price;
         });
 
+        // Busca todos os métodos de frete ativos
+        $shippingMethods = ShippingMethod::where('active', true)->get();
+        
+        // Seleciona o primeiro método de frete por padrão
+        $selectedShippingMethod = $shippingMethods->first();
+
         return Inertia::render('Cart/Index', [
             'cartItems' => $cartItems,
             'total' => $total,
+            'shippingMethods' => $shippingMethods,
+            'selectedShippingMethod' => $selectedShippingMethod,
             'auth' => [
                 'customer' => $customer
             ]
