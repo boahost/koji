@@ -17,7 +17,7 @@ const props = defineProps({
 const navigation = [
     { name: 'Início', href: route('products'), icon: HomeIcon },
     { name: 'Pedidos', href: route('customer.dashboard'), icon: ShoppingBagIcon },
-    { name: 'Carrinho', href: route('cart'), icon: ShoppingCartIcon },
+    { name: 'Carrinho', href: route('cart.index'), icon: ShoppingCartIcon },
     { name: 'Perfil', href: route('customer.profile'), icon: UserIcon },
 ];
 </script>

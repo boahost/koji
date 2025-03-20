@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\ShippingMethod;
 use App\Models\OrderItem;
 use App\Models\Payment;
+use App\Models\Reseller;
 
 class Order extends Model
 {
@@ -18,6 +19,7 @@ class Order extends Model
 
     protected $fillable = [
         'customer_id',
+        'reseller_id',
         'shipping_method_id',
         'subtotal',
         'shipping_cost',
@@ -42,6 +44,14 @@ class Order extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * Get the reseller associated with the order, if any.
+     */
+    public function reseller(): BelongsTo
+    {
+        return $this->belongsTo(Reseller::class);
     }
 
     /**

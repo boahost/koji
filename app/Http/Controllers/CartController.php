@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\Reseller;
 use App\Models\ShippingMethod;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 
 class CartController extends Controller
 {
@@ -18,7 +20,7 @@ class CartController extends Controller
         }
 
         $customer = Auth::guard('customer')->user();
-        $cartItems = CartItem::with('product.department')
+        $cartItems = CartItem::with(['product.department', 'reseller'])
             ->where('customer_id', $customer->id)
             ->get();
 
@@ -31,12 +33,25 @@ class CartController extends Controller
         
         // Seleciona o primeiro método de frete por padrão
         $selectedShippingMethod = $shippingMethods->first();
+        
+        // Verificar se há um revendedor associado
+        $resellerInfo = null;
+        if (session()->has('reseller_reference')) {
+            $reseller = Reseller::where('reference_code', session('reseller_reference'))->first();
+            if ($reseller) {
+                $resellerInfo = [
+                    'name' => $reseller->name,
+                    'commission_rate' => $reseller->commission_rate
+                ];
+            }
+        }
 
         return Inertia::render('Cart/Index', [
             'cartItems' => $cartItems,
             'total' => $total,
             'shippingMethods' => $shippingMethods,
             'selectedShippingMethod' => $selectedShippingMethod,
+            'resellerInfo' => $resellerInfo,
             'auth' => [
                 'customer' => $customer
             ]
@@ -53,6 +68,15 @@ class CartController extends Controller
         }
 
         $customer = Auth::guard('customer')->user();
+        
+        // Obter o revendedor da sessão, se existir
+        $resellerId = null;
+        if (session()->has('reseller_reference')) {
+            $reseller = Reseller::where('reference_code', session('reseller_reference'))->first();
+            if ($reseller) {
+                $resellerId = $reseller->id;
+            }
+        }
         
         // Verifica se o produto já existe no carrinho
         $cartItem = CartItem::where('customer_id', $customer->id)
@@ -71,7 +95,8 @@ class CartController extends Controller
                 'customer_id' => $customer->id,
                 'product_id' => $product->id,
                 'quantity' => 1,
-                'price' => $product->price
+                'price' => $product->price,
+                'reseller_id' => $resellerId
             ]);
             $message = 'Produto adicionado ao carrinho!';
         }
@@ -118,7 +143,7 @@ class CartController extends Controller
         ]);
     }
 
-    public function removeItem(CartItem $cartItem)
+    public function removeFromCart(CartItem $cartItem)
     {
         if ($cartItem->customer_id !== Auth::guard('customer')->id()) {
             return response()->json(['message' => 'Não autorizado'], 403);

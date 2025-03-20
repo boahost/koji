@@ -11,7 +11,8 @@ class CartItem extends Model
         'customer_id',
         'product_id',
         'quantity',
-        'price'
+        'price',
+        'reseller_id'
     ];
 
     public function customer(): BelongsTo
@@ -22,5 +23,10 @@ class CartItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+    
+    public function reseller(): BelongsTo
+    {
+        return $this->belongsTo(Reseller::class);
     }
 }

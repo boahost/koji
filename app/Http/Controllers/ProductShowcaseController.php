@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Department;
+use App\Models\Reseller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -17,8 +18,16 @@ class ProductShowcaseController extends Controller
             'auth' => auth()->guard('customer')->user()
         ]);
     }
+    
     public function index(Request $request)
     {
+        // Verificar se há um código de referência
+        $referenceCode = $request->input('ref');
+        if ($referenceCode) {
+            // Armazenar o código de referência na sessão para uso posterior
+            session(['reseller_reference' => $referenceCode]);
+        }
+        
         $query = Product::with(['category', 'department'])
             ->when($request->input('search'), function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
@@ -34,15 +43,26 @@ class ProductShowcaseController extends Controller
         
         $categories = Category::all();
         $departments = Department::all();
-
-        // dd(uth()->guard('customer')->user());
+        
+        // Verificar se há um revendedor associado ao código de referência
+        $resellerInfo = null;
+        if (session()->has('reseller_reference')) {
+            $reseller = Reseller::where('reference_code', session('reseller_reference'))->first();
+            if ($reseller) {
+                $resellerInfo = [
+                    'name' => $reseller->name,
+                    'commission_rate' => $reseller->commission_rate
+                ];
+            }
+        }
 
         return Inertia::render('Products/Showcase', [
             'products' => $products,
             'categories' => $categories,
             'departments' => $departments,
             'filters' => $request->only(['search', 'category', 'department']),
-            'auth' => auth()->guard('customer')->user()
+            'auth' => auth()->guard('customer')->user(),
+            'resellerInfo' => $resellerInfo
         ]);
     }
 }

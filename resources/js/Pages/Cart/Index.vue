@@ -76,6 +76,16 @@
                                         </p>
                                     </div>
                                 </div>
+                                
+                                <!-- Informação do Revendedor (se aplicável) -->
+                                <div v-if="item.reseller" class="mt-2 text-xs text-indigo-600 flex items-center">
+                                    <span class="inline-flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                        </svg>
+                                        Vendido por: {{ item.reseller.name }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </TransitionGroup>
@@ -391,6 +401,18 @@
                                 <span class="text-2xl font-bold text-[#231F20]">{{ formatCurrency(totalWithShipping) }}</span>
                             </div>
                         </div>
+                        
+                        <!-- Informação do Revendedor (se aplicável) -->
+                        <div v-if="resellerInfo" class="mt-3 pt-3 border-t border-gray-100">
+                            <div class="flex items-center justify-between text-sm">
+                                <div class="flex items-center text-indigo-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                    </svg>
+                                    <span>Compra através de: {{ resellerInfo.name }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <button 
@@ -438,7 +460,8 @@ const props = defineProps({
     cartItems: Array,
     total: Number,
     shippingMethods: Array,
-    selectedShippingMethod: Object
+    selectedShippingMethod: Object,
+    resellerInfo: Object
 })
 
 // Estados de loading

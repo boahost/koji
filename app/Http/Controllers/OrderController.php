@@ -6,10 +6,13 @@ use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
+use App\Models\Reseller;
+use App\Models\ResellerCommission;
 use App\Services\PagSeguroService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
 
 class OrderController extends Controller
@@ -93,9 +96,19 @@ class OrderController extends Controller
             
             $total = $subtotal + $shippingMethod->value;
             
+            // Verifica se há um revendedor associado na sessão
+            $resellerId = null;
+            if (Session::has('reseller_reference')) {
+                $reseller = Reseller::where('reference_code', Session::get('reseller_reference'))->first();
+                if ($reseller) {
+                    $resellerId = $reseller->id;
+                }
+            }
+            
             // Cria o pedido
             $order = Order::create([
                 'customer_id' => Auth::guard('customer')->id(),
+                'reseller_id' => $resellerId,
                 'shipping_method_id' => $shippingMethod->id,
                 'subtotal' => $subtotal,
                 'shipping_cost' => $shippingMethod->value,
@@ -201,9 +214,19 @@ class OrderController extends Controller
             
             $total = $subtotal + $shippingMethod->value;
             
+            // Verifica se há um revendedor associado na sessão
+            $resellerId = null;
+            if (Session::has('reseller_reference')) {
+                $reseller = Reseller::where('reference_code', Session::get('reseller_reference'))->first();
+                if ($reseller) {
+                    $resellerId = $reseller->id;
+                }
+            }
+            
             // Cria o pedido
             $order = Order::create([
                 'customer_id' => Auth::guard('customer')->id(),
+                'reseller_id' => $resellerId,
                 'shipping_method_id' => $shippingMethod->id,
                 'subtotal' => $subtotal,
                 'shipping_cost' => $shippingMethod->value,
@@ -400,6 +423,11 @@ class OrderController extends Controller
         
         if ($status === 'approved') {
             $order->update(['status' => 'processing']);
+            
+            // Se o pedido tiver um revendedor associado, calcula e registra as comissões
+            if ($order->reseller_id) {
+                $this->calculateAndSaveCommissions($order);
+            }
         } elseif ($status === 'refused' || $status === 'cancelled') {
             $order->update(['status' => 'cancelled']);
         }
@@ -429,9 +457,19 @@ class OrderController extends Controller
         // Calcula o total
         $total = $subtotal + $shippingCost;
         
+        // Verifica se há um revendedor associado na sessão
+        $resellerId = null;
+        if (Session::has('reseller_reference')) {
+            $reseller = Reseller::where('reference_code', Session::get('reseller_reference'))->first();
+            if ($reseller) {
+                $resellerId = $reseller->id;
+            }
+        }
+        
         // Cria o pedido
         $order = Order::create([
             'customer_id' => $customer->id,
+            'reseller_id' => $resellerId,
             'shipping_method_id' => $shippingMethod->id,
             'subtotal' => $subtotal,
             'shipping_cost' => $shippingCost,
@@ -456,5 +494,41 @@ class OrderController extends Controller
         }
         
         return $order;
+    }
+
+    /**
+     * Calcula e salva as comissões do revendedor para um pedido aprovado
+     */
+    protected function calculateAndSaveCommissions($order)
+    {
+        // Verifica se o pedido tem um revendedor associado
+        if (!$order->reseller_id) {
+            return;
+        }
+        
+        $reseller = $order->reseller;
+        $commissionRate = $reseller->commission_rate;
+        
+        // Busca os itens do pedido
+        $orderItems = $order->items;
+        
+        // Para cada item, calcula e registra a comissão
+        foreach ($orderItems as $item) {
+            // Calcula a comissão baseada apenas no preço do produto (sem frete)
+            $commissionAmount = ($item->price * $item->quantity) * ($commissionRate / 100);
+            
+            // Registra a comissão
+            ResellerCommission::create([
+                'reseller_id' => $reseller->id,
+                'order_id' => $order->id,
+                'order_item_id' => $item->id,
+                'product_id' => $item->product_id,
+                'product_price' => $item->price,
+                'quantity' => $item->quantity,
+                'commission_rate' => $commissionRate,
+                'commission_amount' => $commissionAmount,
+                'status' => 'approved',
+            ]);
+        }
     }
 }

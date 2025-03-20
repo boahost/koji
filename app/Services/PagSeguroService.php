@@ -150,13 +150,15 @@ class PagSeguroService
     public function createPixPayment(Order $order)
     {
         try {
+            $customer = auth()->user();
+            
             // Prepara os dados para a API do PagSeguro
             $payload = [
                 'reference_id' => (string) $order->id,
                 'customer' => [
-                    'name' => auth()->user()->name,
-                    'email' => auth()->user()->email,
-                    'tax_id' => auth()->user()->cpf ?? '00000000000', // CPF do cliente
+                    'name' => $customer->name,
+                    'email' => $customer->email,
+                    'tax_id' => $this->cleanDocument($customer->document), // Remove pontos, traços e barras
                     'phones' => [
                         [
                             'country' => '55',
@@ -168,15 +170,21 @@ class PagSeguroService
                 ],
                 'items' => $this->formatOrderItems($order),
                 'shipping' => [
-                    'address' => $this->formatOrderAddress($order)
+                    'address' => array_merge(
+                        $this->formatOrderAddress($order),
+                        [
+                            'locality' => $customer->neighborhood ?? 'Centro', // Bairro do cliente
+                            'complement' => $customer->complement ?? 'Não tem' // Complemento do cliente
+                        ]
+                    )
                 ],
                 'notification_urls' => [
-                    route('webhooks.pagseguro')
+                    config('app.url') . '/webhooks/pagseguro'
                 ],
                 'qr_codes' => [
                     [
                         'amount' => [
-                            'value' => (int) ($order->total * 100) // Valor em centavos
+                            'value' => (int) ($order->total * 100)
                         ],
                         'expiration_date' => date('c', strtotime('+30 minutes')),
                         'reference_id' => (string) $order->id
@@ -241,6 +249,14 @@ class PagSeguroService
                 'message' => $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Remove caracteres especiais de um documento (CPF/CNPJ)
+     */
+    private function cleanDocument($document)
+    {
+        return preg_replace('/[^0-9]/', '', $document);
     }
 
     /**
