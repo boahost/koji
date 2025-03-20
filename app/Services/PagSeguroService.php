@@ -179,7 +179,7 @@ class PagSeguroService
                     )
                 ],
                 'notification_urls' => [
-                    config('app.url') . '/webhooks/pagseguro'
+                    $this->getNotificationUrl()
                 ],
                 'qr_codes' => [
                     [
@@ -257,6 +257,14 @@ class PagSeguroService
     private function cleanDocument($document)
     {
         return preg_replace('/[^0-9]/', '', $document);
+    }
+
+    /**
+     * Retorna a URL de notificação configurada
+     */
+    private function getNotificationUrl()
+    {
+        return config('pagseguro.notification_url') ?? config('app.url') . '/webhooks/pagseguro';
     }
 
     /**
