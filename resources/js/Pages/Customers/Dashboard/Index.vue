@@ -89,7 +89,7 @@ defineProps({
                     <div class="bg-gray-50 px-5 py-3">
                         <div class="text-sm">
                             <Link
-                                :href="route('cart')"
+                                :href="route('cart.index')"
                                 class="font-medium text-gray-900 hover:text-gray-700 transition-colors duration-200"
                             >
                                 Ver Carrinho
