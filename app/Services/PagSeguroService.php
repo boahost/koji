@@ -11,18 +11,14 @@ class PagSeguroService
     protected $baseUrl;
     protected $token;
     protected $email;
+    protected $notificationUrl;
     protected $isSandbox;
 
     public function __construct()
     {
-        $this->isSandbox = config('pagseguro.sandbox', true);
-        $this->token = config('pagseguro.token');
-        $this->email = config('pagseguro.email');
-        
-        // Define a URL base de acordo com o ambiente
-        $this->baseUrl = $this->isSandbox 
-            ? 'https://sandbox.api.pagseguro.com' 
-            : 'https://api.pagseguro.com';
+        $this->baseUrl = config('services.pagseguro.url');
+        $this->token = config('services.pagseguro.token');
+        $this->notificationUrl = config('services.pagseguro.notification_url');
     }
 
     /**
@@ -56,7 +52,7 @@ class PagSeguroService
                     'address' => $this->formatOrderAddress($order)
                 ],
                 'notification_urls' => [
-                    route('webhooks.pagseguro')
+                    $this->notificationUrl ?: config('app.url') . '/webhooks/pagseguro'
                 ],
                 'charges' => [
                     [
@@ -150,123 +146,147 @@ class PagSeguroService
     public function createPixPayment(Order $order)
     {
         try {
-            $customer = auth()->user();
-            
-            // Prepara os dados para a API do PagSeguro
+            // Prepara os dados para o PagSeguro
             $payload = [
                 'reference_id' => (string) $order->id,
                 'customer' => [
-                    'name' => $customer->name,
-                    'email' => $customer->email,
-                    'tax_id' => $this->cleanDocument($customer->document), // Remove pontos, traços e barras
+                    'name' => $order->customer->name,
+                    'email' => $order->customer->email,
+                    'tax_id' => $this->cleanDocument($order->customer->document),
                     'phones' => [
                         [
                             'country' => '55',
-                            'area' => '11',
-                            'number' => '999999999',
+                            'area' => $this->getPhoneArea($order->customer->phone),
+                            'number' => $this->getPhoneNumber($order->customer->phone),
                             'type' => 'MOBILE'
                         ]
                     ]
                 ],
-                'items' => $this->formatOrderItems($order),
+                'items' => [
+                    [
+                        'reference_id' => (string) $order->id,
+                        'name' => $order->customer->name,
+                        'quantity' => 1,
+                        'unit_amount' => (int) ($order->total * 100)
+                    ]
+                ],
                 'shipping' => [
-                    'address' => array_merge(
-                        $this->formatOrderAddress($order),
-                        [
-                            'locality' => $customer->neighborhood ?? 'Centro', // Bairro do cliente
-                            'complement' => $customer->complement ?? 'Não tem' // Complemento do cliente
-                        ]
-                    )
+                    'address' => $this->formatOrderAddress($order)
                 ],
                 'notification_urls' => [
-                    $this->getNotificationUrl()
+                    $this->notificationUrl ?: config('app.url') . '/webhooks/pagseguro'
                 ],
                 'qr_codes' => [
                     [
                         'amount' => [
-                            'value' => (int) ($order->total * 100)
+                            'value' => (int) ($order->total_with_shipping * 100)
                         ],
-                        'expiration_date' => date('c', strtotime('+30 minutes')),
+                        'expiration_date' => now()->addMinutes(30)->toIso8601String(),
                         'reference_id' => (string) $order->id
                     ]
                 ]
             ];
 
-            // Faz a requisição para a API do PagSeguro
+            // Log dos dados enviados para o PagSeguro
+            Log::info('PagSeguro PIX Request', ['payload' => $payload]);
+
+            // Faz a requisição para o PagSeguro
             $response = Http::withHeaders([
                 'Authorization' => $this->token,
                 'Content-Type' => 'application/json'
             ])->post($this->baseUrl . '/orders', $payload);
 
-            // Log da resposta para debug
-            \Log::info('PagSeguro PIX Response', [
+            // Log da resposta do PagSeguro
+            Log::info('PagSeguro PIX Response', [
                 'payload' => $payload,
                 'response' => $response->json(),
                 'status' => $response->status()
             ]);
 
-            // Processa a resposta
-            $responseData = $response->json();
-            
+            // Verifica se a requisição foi bem-sucedida
             if ($response->successful()) {
-                $qrCode = $responseData['qr_codes'][0] ?? null;
+                $responseData = $response->json();
                 
-                if ($qrCode) {
-                    return [
-                        'transaction_id' => $qrCode['id'],
-                        'status' => 'pending',
-                        'qrcode_text' => $qrCode['text'],
-                        'qrcode_image' => $qrCode['links']['qr_code']['href'],
-                        'expiration_date' => $qrCode['expiration_date']
-                    ];
-                }
+                // Extrai os dados do QR Code
+                $qrCodeData = $this->extractQrCodeData($responseData);
+                
+                return [
+                    'status' => 'success',
+                    'payment_response' => $qrCodeData
+                ];
+            } else {
+                // Log do erro
+                Log::error('PagSeguro PIX Error', [
+                    'order_id' => $order->id,
+                    'response' => $response->json(),
+                    'status_code' => $response->status()
+                ]);
+                
+                // Retorna o erro
+                $errorMessage = $this->getErrorMessage($response->json());
+                
+                return [
+                    'status' => 'error',
+                    'message' => $errorMessage,
+                    'code' => $response->status()
+                ];
             }
-            
-            // Registra o erro
-            Log::error('PagSeguro PIX Error', [
-                'order_id' => $order->id,
-                'response' => $responseData,
-                'status_code' => $response->status()
-            ]);
-            
-            return [
-                'transaction_id' => null,
-                'status' => 'error',
-                'payment_response' => $responseData
-            ];
-            
         } catch (\Exception $e) {
-            // Registra a exceção
+            // Log do erro
             Log::error('PagSeguro PIX Exception', [
                 'order_id' => $order->id,
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
             
+            // Retorna o erro
             return [
-                'transaction_id' => null,
                 'status' => 'error',
-                'message' => $e->getMessage()
+                'message' => 'Ocorreu um erro ao processar o pagamento. Por favor, tente novamente.',
+                'code' => 500
             ];
         }
+    }
+    
+    /**
+     * Extrai a mensagem de erro da resposta do PagSeguro
+     * 
+     * @param array $response Resposta do PagSeguro
+     * @return string Mensagem de erro
+     */
+    private function getErrorMessage($response)
+    {
+        if (isset($response['error_messages']) && is_array($response['error_messages'])) {
+            $errors = [];
+            
+            foreach ($response['error_messages'] as $error) {
+                if (isset($error['description'])) {
+                    $errors[] = $error['description'];
+                }
+            }
+            
+            if (!empty($errors)) {
+                return 'Erro no processamento do pagamento: ' . implode(', ', $errors);
+            }
+        }
+        
+        return 'Ocorreu um erro ao processar o pagamento. Por favor, tente novamente.';
     }
 
     /**
      * Remove caracteres especiais de um documento (CPF/CNPJ)
+     * 
+     * @param string $document Documento (CPF/CNPJ)
+     * @return string Documento apenas com números
      */
-    private function cleanDocument($document)
+    protected function cleanDocument($document)
     {
+        if (empty($document)) {
+            return '00000000000'; // CPF padrão para evitar erro
+        }
         return preg_replace('/[^0-9]/', '', $document);
     }
-
-    /**
-     * Retorna a URL de notificação configurada
-     */
-    private function getNotificationUrl()
-    {
-        return config('pagseguro.notification_url') ?? config('app.url') . '/webhooks/pagseguro';
-    }
-
+    
     /**
      * Formata os itens do pedido para o formato esperado pelo PagSeguro
      * 
@@ -305,8 +325,8 @@ class PagSeguroService
         return [
             'street' => $street,
             'number' => $number,
-            'complement' => '',
-            'locality' => '',
+            'complement' => 'Não tem',
+            'locality' => 'Centro',
             'city' => $order->city,
             'region_code' => $order->state,
             'country' => 'BRA',
@@ -334,5 +354,80 @@ class PagSeguroService
         ];
         
         return $statusMap[$status] ?? 'pending';
+    }
+
+    /**
+     * Encontra o link para a imagem do QR code nos links fornecidos
+     * 
+     * @param array $links Links do QR code
+     * @return string Link para a imagem do QR code
+     */
+    private function getQrCodeImageFromLinks(array $links)
+    {
+        foreach ($links as $link) {
+            if ($link['rel'] === 'QRCODE.PNG') {
+                return $link['href'];
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Extrai os dados do QR Code da resposta do PagSeguro
+     * 
+     * @param array $responseData Resposta do PagSeguro
+     * @return array Dados do QR Code
+     */
+    private function extractQrCodeData($responseData)
+    {
+        if (isset($responseData['qr_codes']) && !empty($responseData['qr_codes'])) {
+            $qrCode = $responseData['qr_codes'][0];
+            
+            // Verifica se existem links no qrCode
+            if (isset($qrCode['links'])) {
+                // Encontra o link para a imagem do QR code
+                $qrCodeImageLink = $this->getQrCodeImageFromLinks($qrCode['links']);
+                
+                return [
+                    'transaction_id' => $qrCode['id'],
+                    'status' => 'pending',
+                    'qrcode_text' => $qrCode['text'],
+                    'qrcode_image' => $qrCodeImageLink,
+                    'expiration_date' => $qrCode['expiration_date']
+                ];
+            }
+        }
+        
+        return [];
+    }
+
+    private function getPhoneArea($phone)
+    {
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        
+        if (strlen($phone) < 2) {
+            return '11'; // DDD padrão para evitar erro
+        }
+        
+        return substr($phone, 0, 2);
+    }
+
+    private function getPhoneNumber($phone)
+    {
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        
+        if (strlen($phone) <= 2) {
+            return '999999999'; // Número padrão para evitar erro
+        }
+        
+        $number = substr($phone, 2);
+        
+        // Garante que o número tenha pelo menos 8 dígitos
+        if (strlen($number) < 8) {
+            return '999999999';
+        }
+        
+        return $number;
     }
 }

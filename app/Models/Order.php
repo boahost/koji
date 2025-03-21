@@ -85,4 +85,12 @@ class Order extends Model
     {
         return $this->hasOne(Payment::class);
     }
+
+    /**
+     * Get the total with shipping.
+     */
+    public function getTotalWithShippingAttribute()
+    {
+        return $this->total + $this->shipping_cost;
+    }
 }

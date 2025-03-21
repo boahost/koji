@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class OrderController extends Controller
@@ -253,6 +254,18 @@ class OrderController extends Controller
             // Processa o pagamento PIX
             $paymentResult = $this->pagSeguroService->createPixPayment($order);
             
+            // Verifica se houve erro no pagamento
+            if (isset($paymentResult['status']) && $paymentResult['status'] === 'error') {
+                // Registra o erro
+                Log::error('Erro ao processar pagamento PIX', [
+                    'order_id' => $order->id,
+                    'message' => $paymentResult['message'] ?? 'Erro desconhecido'
+                ]);
+                
+                // Redireciona de volta com mensagem de erro
+                return redirect()->route('cart.index')->with('error', $paymentResult['message'] ?? 'Ocorreu um erro ao processar o pagamento. Por favor, tente novamente.');
+            }
+            
             // Cria o registro de pagamento
             $payment = Payment::create([
                 'order_id' => $order->id,
@@ -304,8 +317,8 @@ class OrderController extends Controller
             abort(403);
         }
         
-        // Verifica se o método de pagamento é PIX
-        if ($order->payment->payment_method !== 'pix') {
+        // Verifica se o pagamento existe e se o método de pagamento é PIX
+        if (!$order->payment || $order->payment->payment_method !== 'pix') {
             return redirect()->route('orders.show', $order->id);
         }
         
@@ -314,7 +327,7 @@ class OrderController extends Controller
         
         return Inertia::render('Orders/PixPayment', [
             'order' => $order->load(['items.product.department', 'payment', 'shippingMethod']),
-            'pixData' => $pixData
+            'pixData' => $pixData['payment_response'] ?? $pixData
         ]);
     }
     
@@ -353,38 +366,43 @@ class OrderController extends Controller
      */
     public function showPixPayment(Order $order)
     {
-        // Verifica se o pedido pertence ao cliente logado
+        // Verifica se o pedido pertence ao usuário logado
         if ($order->customer_id !== Auth::guard('customer')->id()) {
-            return redirect()->route('cart.index')->with('error', 'Pedido não encontrado.');
+            abort(403, 'Você não tem permissão para acessar este pedido.');
         }
-
-        // Verifica se o pedido está pendente
-        if ($order->status !== 'pending') {
-            return redirect()->route('cart.index')->with('error', 'Este pedido não está mais pendente.');
-        }
-
-        // Recupera o pagamento PIX
-        $payment = $order->payments()->where('payment_method', 'pix')->latest()->first();
         
-        if (!$payment) {
-            return redirect()->route('cart.index')->with('error', 'Pagamento PIX não encontrado.');
+        // Recupera os dados do PIX da resposta do gateway
+        $pixData = null;
+        
+        if ($order->payment) {
+            // Decodifica a resposta do gateway
+            $gatewayResponse = json_decode($order->payment->gateway_response, true);
+            
+            // Verifica se há uma resposta válida
+            if ($gatewayResponse) {
+                // Verifica se os dados estão dentro de payment_response
+                if (isset($gatewayResponse['payment_response'])) {
+                    $pixData = $gatewayResponse['payment_response'];
+                } else {
+                    $pixData = $gatewayResponse;
+                }
+                
+                // Verifica se o QR code expirou
+                if (isset($pixData['expiration_date'])) {
+                    $expirationDate = new \DateTime($pixData['expiration_date']);
+                    $now = new \DateTime();
+                    
+                    if ($expirationDate < $now) {
+                        // QR Code expirado, adiciona flag para o frontend
+                        $pixData['expired'] = true;
+                    }
+                }
+            }
         }
-
-        // Decodifica a resposta do gateway
-        $gatewayResponse = $payment->gateway_response;
-
+        
         return Inertia::render('Orders/PixPayment', [
-            'order' => [
-                'id' => $order->id,
-                'total' => $order->total,
-                'status' => $order->status,
-                'created_at' => $order->created_at->format('d/m/Y H:i:s')
-            ],
-            'pix' => [
-                'qr_code' => $gatewayResponse['qrcode_text'] ?? null,
-                'qr_code_base64' => $gatewayResponse['qrcode_image'] ?? null,
-                'expiration_date' => $payment->pix_expiration_date?->format('Y-m-d H:i:s')
-            ]
+            'order' => $order->load(['items.product.department', 'payment', 'shippingMethod']),
+            'pixData' => $pixData
         ]);
     }
 

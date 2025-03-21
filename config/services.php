@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'pagseguro' => [
+        'token' => env('PAGSEGURO_TOKEN'),
+        'url' => env('PAGSEGURO_URL', 'https://sandbox.api.pagseguro.com'),
+        'notification_url' => env('URL_NOTIFICACAO'),
+    ],
+
 ];
