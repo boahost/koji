@@ -31,7 +31,7 @@
                     leave-to-class="-translate-x-full opacity-0"
                 >
                     <div
-                        v-show="showFilters || !screen.mobile"
+                        v-show="isFilterVisible"
                         :class="[
                             'w-72 flex-shrink-0',
                             'fixed lg:static top-0 left-0 bottom-0 z-50 lg:z-0',
@@ -449,6 +449,11 @@ const screen = {
     tablet: computed(() => breakpoints.greater('sm') && !breakpoints.greater('lg')),
     desktop: computed(() => breakpoints.greater('lg'))
 }
+
+// Computed para controlar a visibilidade do filtro
+const isFilterVisible = computed(() => {
+    return !screen.mobile.value || showFilters.value
+})
 
 // Estado do carrinho
 // Estado inicial do loading e toast para cada produto
