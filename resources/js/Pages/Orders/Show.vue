@@ -87,7 +87,7 @@
                                 </span>
                             </div>
                             <div v-if="order.payment && order.payment.payment_method === 'pix'" class="mt-2">
-                                <Link :href="route('orders.pix.payment', order.id)" class="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-800">
+                                <Link :href="route('orders.pix', order.id)" class="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-800">
                                     <span>Ver QR Code PIX</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

@@ -110,7 +110,8 @@
 
 <script setup>
 import { Link } from '@inertiajs/vue3'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import axios from 'axios'
 
 const props = defineProps({
     order: Object,
@@ -118,6 +119,39 @@ const props = defineProps({
 })
 
 const imageError = ref(false)
+const paymentStatus = ref(props.order.payment?.status || 'pending')
+const checkInterval = ref(null)
+
+// Verifica o status do pagamento
+const checkPaymentStatus = async () => {
+    try {
+        const response = await axios.get(route('orders.show', props.order.id))
+        const order = response.data.order
+        
+        if (order.payment && order.payment.status === 'approved') {
+            paymentStatus.value = 'approved'
+            clearInterval(checkInterval.value)
+            // Redireciona para a página de sucesso
+            window.location.href = route('orders.success', props.order.id)
+        }
+    } catch (error) {
+        console.error('Erro ao verificar status do pagamento:', error)
+    }
+}
+
+// Inicia a verificação periódica do status
+onMounted(() => {
+    if (paymentStatus.value === 'pending') {
+        checkInterval.value = setInterval(checkPaymentStatus, 5000) // Verifica a cada 5 segundos
+    }
+})
+
+// Limpa o intervalo quando o componente é desmontado
+onUnmounted(() => {
+    if (checkInterval.value) {
+        clearInterval(checkInterval.value)
+    }
+})
 
 // Formata o valor em reais
 const formatCurrency = (value) => {

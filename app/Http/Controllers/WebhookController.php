@@ -126,28 +126,37 @@ class WebhookController extends Controller
         }
         
         $payment = Payment::where('order_id', $order->id)
-            ->where('transaction_id', $qrCode['id'])
+            ->where('payment_method', 'pix')
             ->first();
             
         if (!$payment) {
-            // Cria um novo pagamento se não existir
-            $payment = new Payment([
-                'order_id' => $order->id,
-                'payment_method' => 'pix',
-                'transaction_id' => $qrCode['id'],
-                'amount' => $order->total,
-                'gateway_response' => $qrCode
-            ]);
+            Log::error('Pagamento PIX não encontrado para o pedido', ['order_id' => $order->id]);
+            return;
         }
         
-        // Atualiza o status do pagamento
-        $status = 'approved'; // PIX é aprovado imediatamente quando recebemos a notificação
-        $payment->status = $status;
-        $payment->gateway_response = $qrCode;
-        $payment->save();
+        // Verifica o status do QR Code
+        $status = $qrCode['status'] ?? 'PENDING';
         
-        // Atualiza o status do pedido
-        $this->updateOrderStatus($order, $status);
+        // Se o QR Code foi pago, atualiza o status
+        if ($status === 'PAID') {
+            $payment->status = 'approved';
+            $payment->gateway_response = $qrCode;
+            $payment->save();
+            
+            // Atualiza o status do pedido
+            $order->status = 'processing';
+            $order->save();
+            
+            // Se o pedido tiver um revendedor associado, calcula e registra as comissões
+            if ($order->reseller_id) {
+                $this->calculateAndSaveCommissions($order);
+            }
+            
+            Log::info('Pagamento PIX aprovado', [
+                'order_id' => $order->id,
+                'payment_id' => $payment->id
+            ]);
+        }
     }
 
     /**
