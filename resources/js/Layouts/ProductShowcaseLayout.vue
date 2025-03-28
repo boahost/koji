@@ -56,7 +56,7 @@
 
                     <!-- Carrinho -->
                     <Link
-                        :href="route('cart.index')"
+                        :href="auth ? route('cart.index') : route('customer.login')"
                         class="flex flex-col items-center group transition-all duration-200"
                         :class="{
                             'text-white': currentRoute === 'cart.index',
