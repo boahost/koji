@@ -5,11 +5,11 @@
         </AppHeader>
 
         <!-- Customer Greeting -->
-        <div v-if="auth" class="bg-white border-b border-gray-100">
+        <div v-if="auth?.customer" class="bg-white border-b border-gray-100">
             <div class="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
                     <p class="text-sm text-gray-600">
-                        Olá, <span class="font-medium text-[#231F20]">{{ auth?.customer?.name || auth?.name }}</span>!
+                        Olá, <span class="font-medium text-[#231F20]">{{ auth.customer.name }}</span>!
                     </p>
                     <Link 
                         :href="route('customer.logout')"
@@ -56,7 +56,7 @@
 
                     <!-- Carrinho -->
                     <Link
-                        :href="auth ? route('cart.index') : route('customer.login')"
+                        :href="auth?.customer ? route('cart.index') : route('customer.login')"
                         class="flex flex-col items-center group transition-all duration-200"
                         :class="{
                             'text-white': currentRoute === 'cart.index',
@@ -89,7 +89,7 @@
 
                     <!-- Conta -->
                     <Link
-                        :href="auth ? route('customer.dashboard') : route('customer.login')"
+                        :href="auth?.customer ? route('customer.dashboard') : route('customer.login')"
                         class="flex flex-col items-center group transition-all duration-200"
                         :class="{
                             'text-white': currentRoute === 'customer.dashboard' || currentRoute === 'customer.login',
@@ -104,7 +104,7 @@
                             <UserIcon class="w-5 h-5" />
                         </div>
                         <span class="text-[10px] font-medium mt-1 truncate max-w-[60px] text-center">
-                            {{ auth?.customer?.name || auth?.name || 'Entrar' }}
+                            {{ auth?.customer?.name || 'Entrar' }}
                         </span>
                     </Link>
                 </div>
