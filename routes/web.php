@@ -14,6 +14,7 @@ use App\Http\Controllers\ProductShowcaseController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ShippingMethodController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\WebhookController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -152,7 +153,7 @@ Route::middleware(['web', 'auth:reseller'])->prefix('revendedor')->group(functio
 });
 
 // Webhook do PagSeguro (público)
-Route::post('/webhooks/pagseguro', [OrderController::class, 'webhook'])
+Route::post('/webhooks/pagseguro', [WebhookController::class, 'handlePagSeguro'])
     ->name('webhooks.pagseguro')
     ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
 

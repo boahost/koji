@@ -16,6 +16,11 @@ class RedirectIfAuthenticated
         
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
+                // Não redireciona se estiver na rota de produtos
+                if ($request->route()->getName() === 'products') {
+                    return $next($request);
+                }
+
                 if ($guard === 'customer') {
                     return redirect()->route('customer.dashboard');
                 }

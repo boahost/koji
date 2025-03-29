@@ -61,7 +61,9 @@ class ProductShowcaseController extends Controller
             'categories' => $categories,
             'departments' => $departments,
             'filters' => $request->only(['search', 'category', 'department']),
-            'auth' => auth()->guard('customer')->user(),
+            'auth' => [
+                'customer' => auth()->guard('customer')->user()
+            ],
             'resellerInfo' => $resellerInfo
         ]);
     }
