@@ -18,6 +18,10 @@ class WebhookController extends Controller
     public function handlePagSeguro(Request $request)
     {
         try {
+            // Salva a resposta do webhook em um arquivo
+            $filename = storage_path('logs/pagseguro_webhook_' . date('Y-m-d_H-i-s') . '.json');
+            file_put_contents($filename, json_encode($request->all(), JSON_PRETTY_PRINT));
+
             Log::info('Webhook PagSeguro recebido', [
                 'payload' => $request->all(),
                 'headers' => $request->headers->all()

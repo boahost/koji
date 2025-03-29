@@ -100,6 +100,9 @@ class PagSeguroService
                 'status' => $response->status()
             ]);
 
+            // Salva a resposta completa em um arquivo
+            $this->savePagSeguroResponse($response->json());
+
             // Processa a resposta
             $responseData = $response->json();
             
@@ -216,6 +219,9 @@ class PagSeguroService
                 'response' => $response->json(),
                 'status' => $response->status()
             ]);
+
+            // Salva a resposta completa em um arquivo
+            $this->savePagSeguroResponse($response->json());
 
             // Verifica se a requisição foi bem-sucedida
             if ($response->successful()) {
@@ -443,5 +449,17 @@ class PagSeguroService
         }
         
         return $number;
+    }
+
+    /**
+     * Salva a resposta do PagSeguro em um arquivo
+     * 
+     * @param array $response Resposta do PagSeguro
+     * @return void
+     */
+    private function savePagSeguroResponse($response)
+    {
+        $filename = storage_path('logs/pagseguro_response_' . date('Y-m-d_H-i-s') . '.json');
+        file_put_contents($filename, json_encode($response, JSON_PRETTY_PRINT));
     }
 }
