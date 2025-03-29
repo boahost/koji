@@ -35,14 +35,14 @@ class PagSeguroService
             $payload = [
                 'reference_id' => (string) $order->id,
                 'customer' => [
-                    'name' => auth()->user()->name,
-                    'email' => auth()->user()->email,
-                    'tax_id' => auth()->user()->cpf ?? '00000000000', // CPF do cliente
+                    'name' => $order->customer->name,
+                    'email' => $order->customer->email,
+                    'tax_id' => $order->customer->document ?? '00000000000', // CPF do cliente
                     'phones' => [
                         [
                             'country' => '55',
-                            'area' => '11',
-                            'number' => '999999999',
+                            'area' => $this->getPhoneArea($order->customer->phone),
+                            'number' => $this->getPhoneNumber($order->customer->phone),
                             'type' => 'MOBILE'
                         ]
                     ]
@@ -54,27 +54,21 @@ class PagSeguroService
                 'notification_urls' => [
                     $this->notificationUrl ?: config('app.url') . '/webhooks/pagseguro'
                 ],
-                'charges' => [
-                    [
-                        'reference_id' => (string) $order->id,
-                        'description' => 'Pedido #' . $order->id,
-                        'amount' => [
-                            'value' => (int) ($order->total * 100), // Valor em centavos
-                            'currency' => 'BRL'
-                        ],
-                        'payment_method' => [
-                            'type' => 'CREDIT_CARD',
-                            'installments' => $cardData['installments'],
-                            'capture' => true,
-                            'card' => [
-                                'number' => $cardData['card_number'],
-                                'exp_month' => $cardData['card_expiration_month'],
-                                'exp_year' => '20' . $cardData['card_expiration_year'], // Adiciona '20' ao ano (ex: 25 -> 2025)
-                                'security_code' => $cardData['card_security_code'],
-                                'holder' => [
-                                    'name' => $cardData['card_holder_name']
-                                ]
-                            ]
+                'amount' => [
+                    'value' => (int) ($order->total * 100), // Valor em centavos
+                    'currency' => 'BRL'
+                ],
+                'payment_method' => [
+                    'type' => 'CREDIT_CARD',
+                    'installments' => $cardData['installments'],
+                    'capture' => true,
+                    'card' => [
+                        'number' => $cardData['card_number'],
+                        'exp_month' => $cardData['card_expiration_month'],
+                        'exp_year' => '20' . $cardData['card_expiration_year'], // Adiciona '20' ao ano (ex: 25 -> 2025)
+                        'security_code' => $cardData['card_security_code'],
+                        'holder' => [
+                            'name' => $cardData['card_holder_name']
                         ]
                     ]
                 ]
@@ -94,7 +88,7 @@ class PagSeguroService
             ]);
 
             // Log da resposta do PagSeguro
-            Log::info('resposta_pagseguro', [
+            \Log::info('resposta_pagseguro', [
                 'payload' => $payload,
                 'response' => $response->json(),
                 'status' => $response->status()
@@ -106,16 +100,28 @@ class PagSeguroService
             // Processa a resposta
             $responseData = $response->json();
             
-            if ($response->successful()) {
-                $charge = $responseData['charges'][0] ?? null;
+            // Verifica se há erros na resposta
+            if (isset($responseData['error_messages'])) {
+                Log::error('PagSeguro retornou erros', [
+                    'order_id' => $order->id,
+                    'errors' => $responseData['error_messages']
+                ]);
                 
-                if ($charge) {
-                    return [
-                        'transaction_id' => $charge['id'],
-                        'status' => $this->mapPaymentStatus($charge['status']),
-                        'payment_response' => $responseData
-                    ];
-                }
+                return [
+                    'transaction_id' => null,
+                    'status' => 'error',
+                    'message' => $responseData['error_messages'][0]['description'] ?? 'Erro ao processar pagamento',
+                    'payment_response' => $responseData
+                ];
+            }
+            
+            if ($response->successful()) {
+                // A resposta agora está no nível raiz
+                return [
+                    'transaction_id' => $responseData['id'],
+                    'status' => $this->mapPaymentStatus($responseData['status']),
+                    'payment_response' => $responseData
+                ];
             }
             
             // Registra o erro
@@ -128,6 +134,7 @@ class PagSeguroService
             return [
                 'transaction_id' => null,
                 'status' => 'refused',
+                'message' => 'Erro ao processar pagamento',
                 'payment_response' => $responseData
             ];
             

@@ -29,12 +29,17 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        return [
-            ...parent::share($request),
+        return array_merge(parent::share($request), [
             'auth' => [
                 'user' => $request->user(),
                 'customer' => $request->user('customer'),
             ],
-        ];
+            'flash' => [
+                'message' => fn () => $request->session()->get('message'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
+            'errors' => fn () => $this->resolveValidationErrors($request),
+            'pagseguro_token' => config('services.pagseguro.token'),
+        ]);
     }
 }

@@ -646,42 +646,38 @@ const processPayment = async () => {
             ? '/orders/process-credit-card' 
             : '/orders/process-pix';
             
-        const response = await axios.post(endpoint, paymentData);
-        
-        // Redireciona com base na resposta
-        if (response.data.redirect) {
-            window.location.href = response.data.redirect;
-        } else if (response.data.success) {
-            // Exibe mensagem de sucesso e redireciona para a página de pedidos
-            alert('Pagamento processado com sucesso!');
-            window.location.href = '/orders';
+        try {
+            const response = await axios.post(endpoint, paymentData);
+            
+            // Verifica se a resposta foi bem sucedida
+            if (response.data.success) {
+                // Se houver URL de redirecionamento, redireciona
+                if (response.data.redirect) {
+                    window.location.href = response.data.redirect;
+                } else {
+                    // Se não houver URL de redirecionamento, redireciona para a lista de pedidos
+                    window.location.href = route('orders.index');
+                }
+            } else {
+                // Se houver URL de redirecionamento para página de erro, redireciona
+                if (response.data.redirect) {
+                    window.location.href = response.data.redirect;
+                } else {
+                    // Se não houver URL de redirecionamento, exibe a mensagem de erro
+                    if (response.data.message) {
+                        alert(response.data.message);
+                    } else {
+                        alert('Erro ao processar o pagamento. Por favor, tente novamente.');
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao processar pagamento:', error);
+            alert('Erro ao processar o pagamento. Por favor, tente novamente.');
         }
     } catch (error) {
         console.error('Erro ao processar pagamento:', error);
-        if (error.response) {
-            // O servidor respondeu com um status de erro
-            console.error('Resposta do servidor:', error.response.data);
-            console.error('Status do erro:', error.response.status);
-            
-            // Exibe mensagens de erro específicas
-            if (error.response.data.errors) {
-                const errorMessages = Object.values(error.response.data.errors)
-                    .flat()
-                    .join('\n');
-                alert('Erros de validação:\n' + errorMessages);
-            } else {
-                alert('Erro ao processar o pagamento. Status: ' + error.response.status + 
-                      (error.response.data.message ? '\nMensagem: ' + error.response.data.message : ''));
-            }
-        } else if (error.request) {
-            // A requisição foi feita mas não houve resposta
-            console.error('Sem resposta do servidor');
-            alert('Não foi possível conectar ao servidor. Verifique sua conexão.');
-        } else {
-            // Algo aconteceu na configuração da requisição
-            console.error('Erro na configuração da requisição:', error.message);
-            alert('Erro ao configurar a requisição: ' + error.message);
-        }
+        alert('Erro ao processar o pagamento. Por favor, tente novamente.');
     }
 }
 

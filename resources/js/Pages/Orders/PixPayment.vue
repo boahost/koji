@@ -109,7 +109,7 @@
 </template>
 
 <script setup>
-import { Link } from '@inertiajs/vue3'
+import { Link, usePage } from '@inertiajs/vue3'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 
@@ -118,6 +118,7 @@ const props = defineProps({
     pixData: Object
 })
 
+const page = usePage()
 const imageError = ref(false)
 const paymentStatus = ref(props.order.payment?.status || 'pending')
 const checkInterval = ref(null)
@@ -125,44 +126,82 @@ const checkInterval = ref(null)
 // Verifica o status do pagamento
 const checkPaymentStatus = async () => {
     try {
-        console.log('Verificando status do pagamento...');
-        const response = await axios.get(route('orders.show', props.order.id))
-        const order = response.data.order
+        console.log('Iniciando verificação do status...');
+        console.log('Dados do PIX:', props.pixData);
         
-        console.log('Status do pedido:', {
-            orderId: order.id,
-            paymentStatus: order.payment?.status,
-            orderStatus: order.status
+        // Recupera a URL SELF do QR Code
+        const selfUrl = props.pixData.links.find(link => link.rel === 'SELF')?.href;
+        console.log('URL SELF:', selfUrl);
+        
+        if (!selfUrl) {
+            console.error('URL SELF não encontrada');
+            return;
+        }
+
+        // Faz a requisição para a API do PagSeguro
+        console.log('Fazendo requisição para o PagSeguro...');
+        const response = await axios.get(selfUrl, {
+            headers: {
+                'Authorization': 'Bearer ' + page.props.pagseguro_token,
+                'Content-Type': 'application/json'
+            }
         });
+
+        console.log('Resposta do PagSeguro:', response.data);
+
+        // Verifica o status do QR Code
+        const qrCode = response.data.qr_codes[0];
+        console.log('Status do QR Code:', qrCode?.status);
         
-        if (order.payment && order.payment.status === 'approved') {
-            console.log('Pagamento aprovado, redirecionando...');
-            paymentStatus.value = 'approved'
-            clearInterval(checkInterval.value)
+        if (qrCode && qrCode.status === 'PAID') {
+            console.log('Pagamento PIX confirmado!');
+            paymentStatus.value = 'approved';
+            clearInterval(checkInterval.value);
+            
+            // Salva a resposta no log
+            const logResponse = {
+                timestamp: new Date().toISOString(),
+                orderId: props.order.id,
+                status: qrCode.status,
+                paidAt: qrCode.paid_at,
+                amount: qrCode.amount,
+                response: response.data
+            };
+            
+            // Envia para o backend salvar no log
+            await axios.post('/api/logs/pagseguro-status', logResponse);
+            
             // Redireciona para a página de sucesso
-            window.location.href = route('orders.success', props.order.id)
+            window.location.href = route('orders.success', props.order.id);
         }
     } catch (error) {
-        console.error('Erro ao verificar status do pagamento:', error)
+        console.error('Erro ao verificar status do pagamento:', error);
         if (error.response) {
-            console.error('Resposta do servidor:', error.response.data)
+            console.error('Resposta do servidor:', error.response.data);
         }
     }
 }
 
 // Inicia a verificação periódica do status
 onMounted(() => {
-    console.log('Componente montado, status inicial:', paymentStatus.value);
+    console.log('Componente montado');
+    console.log('Status inicial:', paymentStatus.value);
+    console.log('Dados do PIX:', props.pixData);
+    
     if (paymentStatus.value === 'pending') {
         console.log('Iniciando verificação periódica do status...');
-        checkInterval.value = setInterval(checkPaymentStatus, 5000) // Verifica a cada 5 segundos
+        // Faz a primeira verificação imediatamente
+        checkPaymentStatus();
+        // Inicia o intervalo de verificação
+        checkInterval.value = setInterval(checkPaymentStatus, 5000);
     }
 })
 
 // Limpa o intervalo quando o componente é desmontado
 onUnmounted(() => {
+    console.log('Componente desmontado, limpando intervalo...');
     if (checkInterval.value) {
-        clearInterval(checkInterval.value)
+        clearInterval(checkInterval.value);
     }
 })
 
@@ -186,27 +225,14 @@ const formatDate = (dateString) => {
 
 // Formata a data de expiração
 const formatExpirationDate = (dateString) => {
-    if (!dateString) return ''
-    
-    const expirationDate = new Date(dateString)
-    const now = new Date()
-    
-    // Calcula a diferença em minutos
-    const diffMs = expirationDate - now
-    const diffMins = Math.round(diffMs / 60000)
-    
-    if (diffMins <= 0) {
-        return 'Expirado'
-    }
-    
-    const hours = Math.floor(diffMins / 60)
-    const minutes = diffMins % 60
-    
-    if (hours > 0) {
-        return `${hours}h ${minutes}min`
-    }
-    
-    return `${minutes} minutos`
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    }).format(date);
 }
 
 // Verifica se o QR Code expirou
@@ -219,36 +245,29 @@ const isQrCodeExpired = () => {
     return expirationDate < now
 }
 
-// Obtém a mensagem de erro
+// Retorna a mensagem de erro apropriada
 const getErrorMessage = () => {
     if (imageError.value) {
-        return 'Não foi possível carregar o QR Code.'
+        return 'Erro ao carregar o QR Code. Tente recarregar a página.';
     }
-    
-    if (isQrCodeExpired()) {
-        return 'O QR Code expirou. Por favor, volte ao carrinho e tente novamente.'
+    if (!props.pixData) {
+        return 'Erro ao gerar o QR Code. Tente novamente.';
     }
-    
-    if ($page.props.flash && $page.props.flash.error) {
-        return $page.props.flash.error
-    }
-    
-    return 'Erro ao carregar o QR Code. Por favor, tente novamente.'
-}
-
-// Copia o código PIX para a área de transferência
-const copyPixCode = async (code) => {
-    try {
-        await navigator.clipboard.writeText(code)
-        alert('Código PIX copiado com sucesso!')
-    } catch (err) {
-        alert('Erro ao copiar código PIX')
-    }
+    return 'Erro desconhecido. Tente novamente.';
 }
 
 // Recarrega a página
 const reloadPage = () => {
-    window.location.reload()
+    window.location.reload();
+}
+
+// Copia o código PIX para a área de transferência
+const copyPixCode = (code) => {
+    navigator.clipboard.writeText(code).then(() => {
+        // Aqui você pode adicionar uma notificação de sucesso se desejar
+    }).catch(err => {
+        console.error('Erro ao copiar código:', err);
+    });
 }
 
 // Trata o erro ao carregar a imagem do QR Code

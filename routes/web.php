@@ -105,11 +105,13 @@ Route::middleware('auth:customer')->group(function () {
     Route::delete('/cart/items/{cartItem}', [CartController::class, 'removeFromCart'])->name('cart.remove');
 
     // Rotas de pagamento
-    Route::post('/orders/process-credit-card', [OrderController::class, 'processCreditCardPayment'])->name('orders.process.credit-card');
-    Route::post('/orders/process-pix', [OrderController::class, 'processPixPayment'])->name('orders.process.pix');
-    Route::get('/orders/{order}/pix', [OrderController::class, 'showPixPayment'])->name('orders.pix');
-    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::get('/orders/{order}/success', [OrderController::class, 'success'])->name('orders.success');
+    Route::get('/orders/{order}/pix', [OrderController::class, 'pixPayment'])->name('orders.pix');
+    Route::get('/orders/{order}/payment-error', [OrderController::class, 'paymentError'])->name('orders.payment-error');
+    Route::post('/orders/process-credit-card', [OrderController::class, 'processCreditCardPayment'])->name('orders.process-credit-card');
+    Route::post('/orders/process-pix', [OrderController::class, 'processPixPayment'])->name('orders.process-pix');
 });
 
 // Rotas de autenticação do cliente

@@ -144,6 +144,21 @@ class OrderController extends Controller
                 'installments' => $validated['installments']
             ]);
             
+            // Verifica se houve erro no pagamento
+            if (isset($paymentResult['status']) && $paymentResult['status'] === 'error') {
+                // Registra o erro
+                Log::error('Erro ao processar pagamento com cartão', [
+                    'order_id' => $order->id,
+                    'message' => $paymentResult['message'] ?? 'Erro desconhecido'
+                ]);
+                
+                // Retorna erro para o frontend
+                return response()->json([
+                    'success' => false,
+                    'message' => $paymentResult['message'] ?? 'Ocorreu um erro ao processar o pagamento. Por favor, tente novamente.'
+                ], 400);
+            }
+            
             // Cria o registro de pagamento
             $payment = Payment::create([
                 'order_id' => $order->id,
@@ -160,17 +175,32 @@ class OrderController extends Controller
                 $order->update(['status' => 'processing']);
             } elseif ($paymentResult['status'] === 'refused') {
                 $order->update(['status' => 'cancelled']);
+                
+                // Retorna uma resposta JSON com o redirecionamento para a página de erro
+                return response()->json([
+                    'success' => false,
+                    'redirect' => route('orders.payment-error', [
+                        'order' => $order->id,
+                        'errorMessage' => $paymentResult['payment_response']['payment_response']['message'] ?? 'Pagamento não aprovado'
+                    ])
+                ]);
             }
             
             // Limpa o carrinho
             CartItem::where('customer_id', Auth::guard('customer')->id())->delete();
             
+            // Retorna uma resposta JSON com o redirecionamento
             return response()->json([
                 'success' => true,
                 'redirect' => route('orders.success', $order->id)
             ]);
             
         } catch (\Exception $e) {
+            Log::error('Erro ao processar pagamento com cartão', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao processar o pagamento: ' . $e->getMessage()
@@ -323,11 +353,21 @@ class OrderController extends Controller
         }
         
         // Recupera os dados do PIX da resposta do gateway
-        $pixData = json_decode($order->payment->gateway_response, true);
+        $gatewayResponse = json_decode($order->payment->gateway_response, true);
+        
+        // Extrai os dados do QR Code da resposta do gateway
+        $pixData = [
+            'transaction_id' => $order->payment->transaction_id,
+            'status' => $order->payment->status,
+            'qrcode_text' => $gatewayResponse['qr_codes'][0]['text'] ?? null,
+            'qrcode_image' => $gatewayResponse['qr_codes'][0]['links'][0]['href'] ?? null,
+            'expiration_date' => $gatewayResponse['qr_codes'][0]['expiration_date'] ?? null,
+            'links' => $gatewayResponse['links'] ?? [] // Adiciona os links da resposta
+        ];
         
         return Inertia::render('Orders/PixPayment', [
             'order' => $order->load(['items.product.department', 'payment', 'shippingMethod']),
-            'pixData' => $pixData['payment_response'] ?? $pixData
+            'pixData' => $pixData
         ]);
     }
     
@@ -548,5 +588,21 @@ class OrderController extends Controller
                 'status' => 'approved',
             ]);
         }
+    }
+
+    /**
+     * Exibe a página de erro de pagamento
+     */
+    public function paymentError(Request $request, Order $order)
+    {
+        // Verifica se o pedido pertence ao usuário autenticado
+        if ($order->customer_id !== Auth::guard('customer')->id()) {
+            abort(403);
+        }
+        
+        return Inertia::render('Orders/PaymentError', [
+            'order' => $order->load(['items.product.department', 'payment', 'shippingMethod']),
+            'errorMessage' => $request->query('errorMessage', 'O pagamento não foi aprovado. Por favor, tente novamente.')
+        ]);
     }
 }

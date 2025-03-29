@@ -200,7 +200,7 @@ class WebhookController extends Controller
         
         switch ($paymentStatus) {
             case 'approved':
-                $orderStatus = 'paid';
+                $orderStatus = 'processing';
                 break;
             case 'pending':
                 $orderStatus = 'pending';
