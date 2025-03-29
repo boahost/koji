@@ -93,6 +93,13 @@ class PagSeguroService
                 'status' => $response->status()
             ]);
 
+            // Log da resposta do PagSeguro
+            Log::info('resposta_pagseguro', [
+                'payload' => $payload,
+                'response' => $response->json(),
+                'status' => $response->status()
+            ]);
+
             // Processa a resposta
             $responseData = $response->json();
             
@@ -198,6 +205,13 @@ class PagSeguroService
 
             // Log da resposta do PagSeguro
             Log::info('PagSeguro PIX Response', [
+                'payload' => $payload,
+                'response' => $response->json(),
+                'status' => $response->status()
+            ]);
+
+            // Log da resposta do PagSeguro
+            Log::info('resposta_pagseguro', [
                 'payload' => $payload,
                 'response' => $response->json(),
                 'status' => $response->status()
