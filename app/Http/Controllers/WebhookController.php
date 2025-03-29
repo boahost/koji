@@ -160,9 +160,8 @@ class WebhookController extends Controller
             $payment->gateway_response = $qrCode;
             $payment->save();
             
-            // Atualiza o status do pedido
-            $order->status = 'processing';
-            $order->save();
+            // Atualiza o status do pedido usando a função updateOrderStatus
+            $this->updateOrderStatus($order, 'approved');
             
             // Se o pedido tiver um revendedor associado, calcula e registra as comissões
             if ($order->reseller_id) {
@@ -171,7 +170,9 @@ class WebhookController extends Controller
             
             Log::info('Pagamento PIX aprovado e processado', [
                 'order_id' => $order->id,
-                'payment_id' => $payment->id
+                'payment_id' => $payment->id,
+                'order_status' => $order->status,
+                'payment_status' => $payment->status
             ]);
         } else {
             Log::info('Status PIX não é PAID', [

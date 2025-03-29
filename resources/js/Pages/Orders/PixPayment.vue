@@ -125,10 +125,18 @@ const checkInterval = ref(null)
 // Verifica o status do pagamento
 const checkPaymentStatus = async () => {
     try {
+        console.log('Verificando status do pagamento...');
         const response = await axios.get(route('orders.show', props.order.id))
         const order = response.data.order
         
+        console.log('Status do pedido:', {
+            orderId: order.id,
+            paymentStatus: order.payment?.status,
+            orderStatus: order.status
+        });
+        
         if (order.payment && order.payment.status === 'approved') {
+            console.log('Pagamento aprovado, redirecionando...');
             paymentStatus.value = 'approved'
             clearInterval(checkInterval.value)
             // Redireciona para a página de sucesso
@@ -136,12 +144,17 @@ const checkPaymentStatus = async () => {
         }
     } catch (error) {
         console.error('Erro ao verificar status do pagamento:', error)
+        if (error.response) {
+            console.error('Resposta do servidor:', error.response.data)
+        }
     }
 }
 
 // Inicia a verificação periódica do status
 onMounted(() => {
+    console.log('Componente montado, status inicial:', paymentStatus.value);
     if (paymentStatus.value === 'pending') {
+        console.log('Iniciando verificação periódica do status...');
         checkInterval.value = setInterval(checkPaymentStatus, 5000) // Verifica a cada 5 segundos
     }
 })
