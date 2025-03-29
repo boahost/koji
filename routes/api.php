@@ -46,5 +46,4 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Webhook do PagSeguro
 Route::post('/webhooks/pagseguro', [WebhookController::class, 'handlePagSeguro'])
-    ->name('api.webhooks.pagseguro')
-    ->withoutMiddleware([\Illuminate\Routing\Middleware\ThrottleRequests::class]); 
+    ->name('api.webhooks.pagseguro'); 
