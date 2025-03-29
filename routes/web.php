@@ -24,6 +24,9 @@ Route::get('/', function () {
     return redirect()->route('products');
 });
 
+Route::post('/webhooks/pagseguro', [WebhookController::class, 'handlePagSeguro'])
+    ->name('webhooks.pagseguro');
+
 // Redireciona /login para o login do cliente
 Route::get('/login', function () {
     return redirect()->route('customer.login');
@@ -155,8 +158,7 @@ Route::middleware(['web', 'auth:reseller'])->prefix('revendedor')->group(functio
 });
 
 // Webhook do PagSeguro (público)
-Route::post('/webhooks/pagseguro', [WebhookController::class, 'handlePagSeguro'])
-    ->name('webhooks.pagseguro')
-    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+
+    // ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
 
 require __DIR__.'/auth.php';
