@@ -18,7 +18,10 @@ class WebhookController extends Controller
     public function handlePagSeguro(Request $request)
     {
         try {
-            Log::info('Webhook PagSeguro recebido', $request->all());
+            Log::info('Webhook PagSeguro recebido', [
+                'payload' => $request->all(),
+                'headers' => $request->headers->all()
+            ]);
 
             // Valida a assinatura do webhook (em produção, você deve implementar isso)
             // if (!$this->validateSignature($request)) {
@@ -36,6 +39,7 @@ class WebhookController extends Controller
             
             // Processa notificação de PIX
             if (isset($data['qr_codes'])) {
+                Log::info('Processando notificação PIX', ['qr_codes' => $data['qr_codes']]);
                 foreach ($data['qr_codes'] as $qrCode) {
                     $this->processPixNotification($qrCode);
                 }
@@ -45,7 +49,8 @@ class WebhookController extends Controller
         } catch (\Exception $e) {
             Log::error('Erro ao processar webhook do PagSeguro', [
                 'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'payload' => $request->all()
             ]);
             
             return response()->json(['error' => 'Erro ao processar webhook'], 500);
@@ -109,6 +114,8 @@ class WebhookController extends Controller
      */
     private function processPixNotification(array $qrCode)
     {
+        Log::info('Processando notificação PIX individual', ['qr_code' => $qrCode]);
+
         // Obtém o ID de referência (ID do pedido)
         $referenceId = $qrCode['reference_id'] ?? null;
         
@@ -136,9 +143,19 @@ class WebhookController extends Controller
         
         // Verifica o status do QR Code
         $status = $qrCode['status'] ?? 'PENDING';
+        Log::info('Status do QR Code PIX', [
+            'order_id' => $order->id,
+            'payment_id' => $payment->id,
+            'status' => $status
+        ]);
         
         // Se o QR Code foi pago, atualiza o status
         if ($status === 'PAID') {
+            Log::info('Pagamento PIX confirmado', [
+                'order_id' => $order->id,
+                'payment_id' => $payment->id
+            ]);
+
             $payment->status = 'approved';
             $payment->gateway_response = $qrCode;
             $payment->save();
@@ -152,9 +169,15 @@ class WebhookController extends Controller
                 $this->calculateAndSaveCommissions($order);
             }
             
-            Log::info('Pagamento PIX aprovado', [
+            Log::info('Pagamento PIX aprovado e processado', [
                 'order_id' => $order->id,
                 'payment_id' => $payment->id
+            ]);
+        } else {
+            Log::info('Status PIX não é PAID', [
+                'order_id' => $order->id,
+                'payment_id' => $payment->id,
+                'status' => $status
             ]);
         }
     }
