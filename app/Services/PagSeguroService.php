@@ -52,7 +52,7 @@ class PagSeguroService
                     'address' => $this->formatOrderAddress($order)
                 ],
                 'notification_urls' => [
-                    route('api.webhooks.pagseguro')
+                    config('app.url') . '/webhooks/pagseguro'
                 ],
                 'amount' => [
                     'value' => (int) ($order->total * 100), // Valor em centavos
@@ -191,7 +191,7 @@ class PagSeguroService
                     'address' => $this->formatOrderAddress($order)
                 ],
                 'notification_urls' => [
-                    route('api.webhooks.pagseguro')
+                    config('app.url') . '/webhooks/pagseguro'
                 ],
                 'qr_codes' => [
                     [
