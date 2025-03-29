@@ -24,9 +24,6 @@ Route::get('/', function () {
     return redirect()->route('products');
 });
 
-Route::post('/webhooks/pagseguro', [WebhookController::class, 'handlePagSeguro'])
-    ->name('webhooks.pagseguro');
-
 // Redireciona /login para o login do cliente
 Route::get('/login', function () {
     return redirect()->route('customer.login');
