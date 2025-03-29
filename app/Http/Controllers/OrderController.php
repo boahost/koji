@@ -356,14 +356,20 @@ class OrderController extends Controller
         $gatewayResponse = json_decode($order->payment->gateway_response, true);
         
         // Extrai os dados do QR Code da resposta do gateway
-        $pixData = [
-            'transaction_id' => $order->payment->transaction_id,
-            'status' => $order->payment->status,
-            'qrcode_text' => $gatewayResponse['qr_codes'][0]['text'] ?? null,
-            'qrcode_image' => $gatewayResponse['qr_codes'][0]['links'][0]['href'] ?? null,
-            'expiration_date' => $gatewayResponse['qr_codes'][0]['expiration_date'] ?? null,
-            'links' => $gatewayResponse['links'] ?? [] // Adiciona os links da resposta
-        ];
+        $pixData = null;
+        
+        if (isset($gatewayResponse['payment_response']['qr_codes'][0])) {
+            $qrCode = $gatewayResponse['payment_response']['qr_codes'][0];
+            
+            $pixData = [
+                'transaction_id' => $order->payment->transaction_id,
+                'status' => $order->payment->status,
+                'qrcode_text' => $qrCode['text'] ?? null,
+                'qrcode_image' => $qrCode['links'][0]['href'] ?? null,
+                'expiration_date' => $qrCode['expiration_date'] ?? null,
+                'links' => $gatewayResponse['payment_response']['links'] ?? []
+            ];
+        }
         
         return Inertia::render('Orders/PixPayment', [
             'order' => $order->load(['items.product.department', 'payment', 'shippingMethod']),

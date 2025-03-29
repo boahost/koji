@@ -52,7 +52,7 @@ class PagSeguroService
                     'address' => $this->formatOrderAddress($order)
                 ],
                 'notification_urls' => [
-                    config('app.url') . '/webhooks/pagseguro'
+                    env('URL_NOTIFICACAO')
                 ],
                 'amount' => [
                     'value' => (int) ($order->total * 100), // Valor em centavos
@@ -182,7 +182,7 @@ class PagSeguroService
                 'items' => [
                     [
                         'reference_id' => (string) $order->id,
-                        'name' => $order->customer->name,
+                        'name' => 'Pedido #' . $order->id,
                         'quantity' => 1,
                         'unit_amount' => (int) ($order->total * 100)
                     ]
@@ -191,12 +191,12 @@ class PagSeguroService
                     'address' => $this->formatOrderAddress($order)
                 ],
                 'notification_urls' => [
-                    config('app.url') . '/webhooks/pagseguro'
+                    env('URL_NOTIFICACAO')
                 ],
                 'qr_codes' => [
                     [
                         'amount' => [
-                            'value' => (int) ($order->total_with_shipping * 100)
+                            'value' => (int) ($order->total * 100)
                         ],
                         'expiration_date' => now()->addMinutes(30)->toIso8601String(),
                         'reference_id' => (string) $order->id
@@ -220,13 +220,6 @@ class PagSeguroService
                 'status' => $response->status()
             ]);
 
-            // Log da resposta do PagSeguro
-            Log::info('resposta_pagseguro', [
-                'payload' => $payload,
-                'response' => $response->json(),
-                'status' => $response->status()
-            ]);
-
             // Salva a resposta completa em um arquivo
             $this->savePagSeguroResponse($response->json());
 
@@ -239,7 +232,11 @@ class PagSeguroService
                 
                 return [
                     'status' => 'success',
-                    'payment_response' => $qrCodeData
+                    'transaction_id' => $responseData['id'] ?? null,
+                    'payment_response' => [
+                        'qr_codes' => $responseData['qr_codes'] ?? [],
+                        'links' => $responseData['links'] ?? []
+                    ]
                 ];
             } else {
                 // Log do erro
@@ -411,20 +408,18 @@ class PagSeguroService
         if (isset($responseData['qr_codes']) && !empty($responseData['qr_codes'])) {
             $qrCode = $responseData['qr_codes'][0];
             
-            // Verifica se existem links no qrCode
-            if (isset($qrCode['links'])) {
-                // Encontra o link para a imagem do QR code
-                $qrCodeImageLink = $this->getQrCodeImageFromLinks($qrCode['links']);
-                
-                return [
-                    'transaction_id' => $qrCode['id'],
-                    'status' => 'pending',
-                    'qrcode_text' => $qrCode['text'],
-                    'qrcode_image' => $qrCodeImageLink,
-                    'expiration_date' => $qrCode['expiration_date']
-                ];
-            }
+            return [
+                'transaction_id' => $qrCode['id'],
+                'status' => 'pending',
+                'qrcode_text' => $qrCode['text'],
+                'qrcode_image' => $qrCode['links'][0]['href'] ?? null,
+                'expiration_date' => $qrCode['expiration_date']
+            ];
         }
+        
+        Log::error('QR Code não encontrado na resposta do PagSeguro', [
+            'response' => $responseData
+        ]);
         
         return [];
     }

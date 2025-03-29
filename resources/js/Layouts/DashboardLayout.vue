@@ -343,6 +343,14 @@ const isSubmenuOpen = (itemName) => {
 const navigation = [
     { name: 'Início', href: route('dashboard'), icon: HomeIcon, current: route().current('dashboard') },
     {
+        name: 'Vendas',
+        icon: ShoppingBagIcon,
+        current: route().current('sales.*'),
+        submenu: [
+            { name: 'Listar', href: route('sales.index'), current: route().current('sales.index') },
+        ]
+    },
+    {
         name: 'Produtos',
         icon: ShoppingBagIcon,
         current: route().current('products.*'),
