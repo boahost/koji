@@ -13,25 +13,19 @@ class ResellerCommission extends Model
     protected $fillable = [
         'reseller_id',
         'order_id',
-        'order_item_id',
-        'product_id',
-        'product_price',
-        'quantity',
+        'amount',
         'commission_rate',
-        'commission_amount',
         'status',
-        'paid_at'
+        'payment_data'
     ];
 
     protected $casts = [
-        'product_price' => 'decimal:2',
-        'commission_rate' => 'decimal:2',
-        'commission_amount' => 'decimal:2',
-        'paid_at' => 'datetime',
+        'payment_data' => 'array',
+        'amount' => 'decimal:2'
     ];
 
     /**
-     * Get the reseller that owns the commission.
+     * Relacionamento com o revendedor
      */
     public function reseller(): BelongsTo
     {
@@ -39,7 +33,7 @@ class ResellerCommission extends Model
     }
 
     /**
-     * Get the order that owns the commission.
+     * Relacionamento com o pedido
      */
     public function order(): BelongsTo
     {

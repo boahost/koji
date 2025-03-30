@@ -343,38 +343,60 @@ class OrderController extends Controller
     public function pixPayment(Order $order)
     {
         // Verifica se o pedido pertence ao usuário autenticado
-        if ($order->customer_id !== Auth::guard('customer')->id()) {
-            abort(403);
+        if ($order->customer_id !== auth()->id()) {
+            return redirect()->route('orders.index')
+                ->with('error', 'Você não tem permissão para acessar este pedido.');
         }
-        
-        // Verifica se o pagamento existe e se o método de pagamento é PIX
-        if (!$order->payment || $order->payment->payment_method !== 'pix') {
-            return redirect()->route('orders.show', $order->id);
+
+        // Verifica se já existe um pagamento PIX aprovado
+        $pixPayment = $order->payments()
+            ->where('payment_method', 'pix')
+            ->where('status', 'approved')
+            ->first();
+
+        if ($pixPayment) {
+            return redirect()->route('orders.show', $order)
+                ->with('success', 'Este pedido já foi pago via PIX.');
         }
-        
-        // Recupera os dados do PIX da resposta do gateway
-        $gatewayResponse = json_decode($order->payment->gateway_response, true);
-        
-        // Extrai os dados do QR Code da resposta do gateway
-        $pixData = null;
-        
-        if (isset($gatewayResponse['payment_response']['qr_codes'][0])) {
-            $qrCode = $gatewayResponse['payment_response']['qr_codes'][0];
-            
-            $pixData = [
-                'transaction_id' => $order->payment->transaction_id,
-                'status' => $order->payment->status,
-                'qrcode_text' => $qrCode['text'] ?? null,
-                'qrcode_image' => $qrCode['links'][0]['href'] ?? null,
-                'expiration_date' => $qrCode['expiration_date'] ?? null,
-                'links' => $gatewayResponse['payment_response']['links'] ?? []
-            ];
-        }
-        
-        return Inertia::render('Orders/PixPayment', [
-            'order' => $order->load(['items.product.department', 'payment', 'shippingMethod']),
-            'pixData' => $pixData
+
+        // Cria um novo pagamento PIX
+        $payment = $order->payments()->create([
+            'payment_method' => 'pix',
+            'amount' => $order->total,
+            'status' => 'pending',
+            'transaction_id' => null,
+            'payment_data' => []
         ]);
+
+        // Gera o QR Code
+        $response = $this->pagSeguroService->createPixPayment($order);
+
+        if ($response['status'] === 'success') {
+            // Atualiza o pagamento com os dados do QR Code
+            $payment->update([
+                'transaction_id' => $response['transaction_id'],
+                'payment_data' => [
+                    'qrcode_text' => $response['qrcode_text'],
+                    'qrcode_image' => $response['qrcode_image'],
+                    'expiration_date' => $response['expiration_date'],
+                    'links' => $response['links'] ?? []
+                ]
+            ]);
+
+            return Inertia::render('Orders/PixPayment', [
+                'order' => $order->load('shippingMethod'),
+                'payment' => $payment->fresh(),
+                'qrCodeData' => [
+                    'transaction_id' => $response['transaction_id'],
+                    'qrcode_text' => $response['qrcode_text'],
+                    'qrcode_image' => $response['qrcode_image'],
+                    'expiration_date' => $response['expiration_date'],
+                    'links' => $response['links'] ?? []
+                ]
+            ]);
+        }
+
+        return back()->with('error', $response['message'] ?? 'Erro ao gerar o QR Code. Tente novamente.');
     }
     
     /**

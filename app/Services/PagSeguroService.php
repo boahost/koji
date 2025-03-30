@@ -230,13 +230,24 @@ class PagSeguroService
                 // Extrai os dados do QR Code
                 $qrCodeData = $this->extractQrCodeData($responseData);
                 
+                if (empty($qrCodeData)) {
+                    Log::error('Dados do QR Code não encontrados na resposta', [
+                        'response' => $responseData
+                    ]);
+                    
+                    return [
+                        'status' => 'error',
+                        'message' => 'Erro ao gerar o QR Code. Tente novamente.'
+                    ];
+                }
+                
                 return [
                     'status' => 'success',
-                    'transaction_id' => $responseData['id'] ?? null,
-                    'payment_response' => [
-                        'qr_codes' => $responseData['qr_codes'] ?? [],
-                        'links' => $responseData['links'] ?? []
-                    ]
+                    'transaction_id' => $qrCodeData['transaction_id'],
+                    'qrcode_text' => $qrCodeData['qrcode_text'],
+                    'qrcode_image' => $qrCodeData['qrcode_image'],
+                    'expiration_date' => $qrCodeData['expiration_date'],
+                    'links' => $qrCodeData['links']
                 ];
             } else {
                 // Log do erro
@@ -408,12 +419,24 @@ class PagSeguroService
         if (isset($responseData['qr_codes']) && !empty($responseData['qr_codes'])) {
             $qrCode = $responseData['qr_codes'][0];
             
+            // Encontra o link da imagem do QR Code
+            $qrCodeImage = null;
+            if (isset($qrCode['links'])) {
+                foreach ($qrCode['links'] as $link) {
+                    if ($link['rel'] === 'QRCODE.PNG') {
+                        $qrCodeImage = $link['href'];
+                        break;
+                    }
+                }
+            }
+            
             return [
                 'transaction_id' => $qrCode['id'],
                 'status' => 'pending',
                 'qrcode_text' => $qrCode['text'],
-                'qrcode_image' => $qrCode['links'][0]['href'] ?? null,
-                'expiration_date' => $qrCode['expiration_date']
+                'qrcode_image' => $qrCodeImage,
+                'expiration_date' => $qrCode['expiration_date'],
+                'links' => $responseData['links'] ?? []
             ];
         }
         

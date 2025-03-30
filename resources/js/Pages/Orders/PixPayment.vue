@@ -19,11 +19,6 @@
                         <p class="text-lg font-semibold text-indigo-600">{{ formatCurrency(order.total) }}</p>
                     </div>
                 </div>
-                <div class="border-t border-gray-200 pt-4">
-                    <div class="text-sm text-gray-600">
-                        <p>Método de envio: {{ order.shipping_method.name }}</p>
-                    </div>
-                </div>
             </div>
 
             <!-- Conteúdo Principal -->
@@ -37,13 +32,13 @@
                 <div class="mt-8">
                     <div class="bg-white rounded-lg p-6 border-2 border-dashed border-gray-200">
                         <div class="flex flex-col items-center">
-                            <img v-if="pixData && pixData.qrcode_image" 
-                                :src="pixData.qrcode_image" 
+                            <img v-if="qrCodeImage" 
+                                :src="qrCodeImage" 
                                 alt="QR Code PIX"
                                 class="mx-auto w-48 h-48"
                                 @error="handleImageError"
                             />
-                            <div v-else-if="imageError || !pixData || !pixData.qrcode_image" class="w-48 h-48 mx-auto bg-gray-100 rounded-lg flex flex-col items-center justify-center p-2">
+                            <div v-else-if="imageError || !qrCodeImage" class="w-48 h-48 mx-auto bg-gray-100 rounded-lg flex flex-col items-center justify-center p-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
@@ -59,15 +54,15 @@
                             </div>
                             
                             <div class="mt-6 w-full">
-                                <div v-if="pixData && pixData.qrcode_text" class="mt-4">
+                                <div v-if="qrCodeText" class="mt-4">
                                     <p class="text-xs text-gray-500 mb-2">Ou copie o código PIX abaixo:</p>
                                     <div class="relative">
                                         <input type="text" 
-                                            :value="pixData.qrcode_text" 
+                                            :value="qrCodeText" 
                                             readonly
                                             class="w-full px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-[#231F20] focus:border-[#231F20]"
                                         />
-                                        <button @click="copyPixCode(pixData.qrcode_text)"
+                                        <button @click="copyPixCode(qrCodeText)"
                                             class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-xs font-medium text-[#231F20] hover:text-[#231F20]/70 transition-colors">
                                             Copiar
                                         </button>
@@ -91,9 +86,9 @@
                 </div>
 
                 <!-- Tempo de Expiração -->
-                <div v-if="pixData && pixData.expiration_date" class="mt-8 text-center">
+                <div v-if="expirationDate" class="mt-8 text-center">
                     <p class="text-sm text-gray-600">
-                        Este QR Code expira em: {{ formatExpirationDate(pixData.expiration_date) }}
+                        Este QR Code expira em: {{ formatExpirationDate(expirationDate) }}
                     </p>
                 </div>
 
@@ -109,101 +104,69 @@
 </template>
 
 <script setup>
-import { Link, usePage } from '@inertiajs/vue3'
+import { Link, usePage, router } from '@inertiajs/vue3'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 
 const props = defineProps({
-    order: Object,
-    pixData: Object
+    order: {
+        type: Object,
+        required: true
+    },
+    payment: {
+        type: Object,
+        required: true
+    },
+    qrCodeData: {
+        type: Object,
+        required: true
+    }
 })
 
 const page = usePage()
 const imageError = ref(false)
-const paymentStatus = ref(props.order.payment?.status || 'pending')
-const checkInterval = ref(null)
+const qrCodeText = ref(props.qrCodeData.qrcode_text)
+const qrCodeImage = ref(props.qrCodeData.qrcode_image)
+const expirationDate = ref(props.qrCodeData.expiration_date)
+const transactionId = ref(props.qrCodeData.transaction_id)
+const links = ref(props.qrCodeData.links || [])
 
-// Verifica o status do pagamento
+// Função para verificar o status do pagamento
 const checkPaymentStatus = async () => {
     try {
-        console.log('Iniciando verificação do status...');
-        console.log('Dados do PIX:', props.pixData);
-        
-        // Recupera a URL SELF do QR Code
-        const selfUrl = props.pixData.links.find(link => link.rel === 'SELF')?.href;
-        console.log('URL SELF:', selfUrl);
-        
-        if (!selfUrl) {
-            console.error('URL SELF não encontrada');
-            return;
+        if (!links.value || !links.value.length) {
+            console.error('Links não encontrados para verificação do status')
+            return
         }
 
-        // Faz a requisição para a API do PagSeguro
-        console.log('Fazendo requisição para o PagSeguro...');
-        const response = await axios.get(selfUrl, {
+        const statusLink = links.value.find(link => link.rel === 'SELF')
+        if (!statusLink) {
+            console.error('Link de status não encontrado')
+            return
+        }
+
+        const response = await axios.get(statusLink.href, {
             headers: {
-                'Authorization': 'Bearer ' + page.props.pagseguro_token,
-                'Content-Type': 'application/json'
+                'Authorization': 'Bearer ' + process.env.PAGSEGURO_TOKEN
             }
-        });
+        })
 
-        console.log('Resposta do PagSeguro:', response.data);
+        if (response.data.charges && response.data.charges.length > 0) {
+            const charge = response.data.charges[0]
+            if (charge.status === 'PAID') {
+                // Atualiza o status do pagamento
+                await axios.post(`/api/orders/${props.order.id}/payments/${props.payment.id}/status`, {
+                    status: 'approved'
+                })
 
-        // Verifica o status do QR Code
-        const qrCode = response.data.qr_codes[0];
-        console.log('Status do QR Code:', qrCode?.status);
-        
-        if (qrCode && qrCode.status === 'PAID') {
-            console.log('Pagamento PIX confirmado!');
-            paymentStatus.value = 'approved';
-            clearInterval(checkInterval.value);
-            
-            // Salva a resposta no log
-            const logResponse = {
-                timestamp: new Date().toISOString(),
-                orderId: props.order.id,
-                status: qrCode.status,
-                paidAt: qrCode.paid_at,
-                amount: qrCode.amount,
-                response: response.data
-            };
-            
-            // Envia para o backend salvar no log
-            await axios.post('/api/logs/pagseguro-status', logResponse);
-            
-            // Redireciona para a página de sucesso
-            window.location.href = route('orders.success', props.order.id);
+                // Redireciona para a página de sucesso
+                router.visit(route('orders.show', props.order.id))
+            }
         }
     } catch (error) {
-        console.error('Erro ao verificar status do pagamento:', error);
-        if (error.response) {
-            console.error('Resposta do servidor:', error.response.data);
-        }
+        console.error('Erro ao verificar status do pagamento:', error)
     }
 }
-
-// Inicia a verificação periódica do status
-onMounted(() => {
-    console.log('Componente montado');
-    console.log('Status inicial:', paymentStatus.value);
-    console.log('Dados do PIX:', props.pixData);
-    
-    if (paymentStatus.value === 'pending') {
-        console.log('Iniciando verificação periódica do status...');
-        // Faz a primeira verificação imediatamente
-        checkPaymentStatus();
-        // Inicia o intervalo de verificação
-        checkInterval.value = setInterval(checkPaymentStatus, 5000);
-    }
-})
-
-// Limpa o intervalo quando o componente é desmontado
-onUnmounted(() => {
-    console.log('Componente desmontado, limpando intervalo...');
-    if (checkInterval.value) {
-        clearInterval(checkInterval.value);
-    }
-})
 
 // Formata o valor em reais
 const formatCurrency = (value) => {
@@ -225,21 +188,21 @@ const formatDate = (dateString) => {
 
 // Formata a data de expiração
 const formatExpirationDate = (dateString) => {
-    const date = new Date(dateString);
+    const date = new Date(dateString)
     return new Intl.DateTimeFormat('pt-BR', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
-    }).format(date);
+    }).format(date)
 }
 
 // Verifica se o QR Code expirou
 const isQrCodeExpired = () => {
-    if (!props.pixData || !props.pixData.expiration_date) return false
+    if (!expirationDate.value) return false
     
-    const expirationDate = new Date(props.pixData.expiration_date)
+    const expirationDate = new Date(expirationDate.value)
     const now = new Date()
     
     return expirationDate < now
@@ -248,17 +211,17 @@ const isQrCodeExpired = () => {
 // Retorna a mensagem de erro apropriada
 const getErrorMessage = () => {
     if (imageError.value) {
-        return 'Erro ao carregar o QR Code. Tente recarregar a página.';
+        return 'Erro ao carregar o QR Code. Tente recarregar a página.'
     }
-    if (!props.pixData) {
-        return 'Erro ao gerar o QR Code. Tente novamente.';
+    if (!qrCodeImage.value) {
+        return 'Erro ao gerar o QR Code. Tente novamente.'
     }
-    return 'Erro desconhecido. Tente novamente.';
+    return 'Erro desconhecido. Tente novamente.'
 }
 
 // Recarrega a página
 const reloadPage = () => {
-    window.location.reload();
+    window.location.reload()
 }
 
 // Copia o código PIX para a área de transferência
@@ -266,8 +229,8 @@ const copyPixCode = (code) => {
     navigator.clipboard.writeText(code).then(() => {
         // Aqui você pode adicionar uma notificação de sucesso se desejar
     }).catch(err => {
-        console.error('Erro ao copiar código:', err);
-    });
+        console.error('Erro ao copiar código:', err)
+    })
 }
 
 // Trata o erro ao carregar a imagem do QR Code
