@@ -35,17 +35,43 @@ class WebhookController extends Controller
             $data = $request->all();
             
             // Processa notificação de pagamento
-            if (isset($data['charges'])) {
+            if (isset($data['charges']) && !empty($data['charges'])) {
                 foreach ($data['charges'] as $charge) {
-                    $this->processPaymentNotification($charge);
-                }
-            }
-            
-            // Processa notificação de PIX
-            if (isset($data['qr_codes'])) {
-                Log::info('Processando notificação PIX', ['qr_codes' => $data['qr_codes']]);
-                foreach ($data['qr_codes'] as $qrCode) {
-                    $this->processPixNotification($qrCode);
+                    // Verifica se é um pagamento PIX
+                    if (isset($charge['payment_method']['type']) && $charge['payment_method']['type'] === 'PIX') {
+                        // Busca o pedido pelo reference_id
+                        $order = Order::find($charge['reference_id']);
+                        
+                        if ($order) {
+                            // Busca o pagamento do pedido
+                            $payment = Payment::where('order_id', $order->id)
+                                ->where('payment_method', 'pix')
+                                ->first();
+
+                            if ($payment) {
+                                // Se o status for PAID, atualiza o pagamento e o pedido
+                                if ($charge['status'] === 'PAID') {
+                                    $payment->update([
+                                        'status' => 'approved',
+                                        'transaction_id' => $charge['id'],
+                                        'payment_data' => array_merge($payment->payment_data ?? [], [
+                                            'paid_at' => $charge['paid_at'] ?? null,
+                                            'payment_response' => $charge['payment_response'] ?? null,
+                                            'payment_method' => $charge['payment_method'] ?? null
+                                        ])
+                                    ]);
+
+                                    $order->update(['status' => 'processing']);
+
+                                    Log::info('Pagamento PIX aprovado', [
+                                        'order_id' => $order->id,
+                                        'payment_id' => $payment->id,
+                                        'charge_id' => $charge['id']
+                                    ]);
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
