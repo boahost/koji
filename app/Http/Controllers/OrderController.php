@@ -132,6 +132,36 @@ class OrderController extends Controller
                     'total' => $cartItem->quantity * $cartItem->price
                 ]);
             }
+
+            // Se houver um revendedor associado, cria a comissão
+            if ($order->reseller_id) {
+                $reseller = $order->reseller;
+                if ($reseller && $reseller->commission_rate > 0) {
+                    // Calcula a comissão baseada no total do pedido
+                    $commissionAmount = $order->total * ($reseller->commission_rate / 100);
+
+                    // Cria o registro de comissão
+                    ResellerCommission::create([
+                        'reseller_id' => $order->reseller_id,
+                        'order_id' => $order->id,
+                        'amount' => number_format($commissionAmount, 2, '.', ''),
+                        'commission_rate' => number_format($reseller->commission_rate, 2, '.', ''),
+                        'status' => 'pending',
+                        'payment_data' => [
+                            'order_total' => number_format($order->total, 2, '.', ''),
+                            'commission_rate' => number_format($reseller->commission_rate, 2, '.', ''),
+                            'calculated_amount' => number_format($commissionAmount, 2, '.', '')
+                        ]
+                    ]);
+
+                    Log::info('Comissão do revendedor criada', [
+                        'order_id' => $order->id,
+                        'reseller_id' => $order->reseller_id,
+                        'commission_amount' => number_format($commissionAmount, 2, '.', ''),
+                        'commission_rate' => number_format($reseller->commission_rate, 2, '.', '')
+                    ]);
+                }
+            }
             
             // Processa o pagamento
             $pagSeguroService = new PagSeguroService();
@@ -279,6 +309,36 @@ class OrderController extends Controller
                     'price' => $cartItem->price,
                     'total' => $cartItem->quantity * $cartItem->price
                 ]);
+            }
+
+            // Se houver um revendedor associado, cria a comissão
+            if ($order->reseller_id) {
+                $reseller = $order->reseller;
+                if ($reseller && $reseller->commission_rate > 0) {
+                    // Calcula a comissão baseada no total do pedido
+                    $commissionAmount = $order->total * ($reseller->commission_rate / 100);
+
+                    // Cria o registro de comissão
+                    ResellerCommission::create([
+                        'reseller_id' => $order->reseller_id,
+                        'order_id' => $order->id,
+                        'amount' => number_format($commissionAmount, 2, '.', ''),
+                        'commission_rate' => number_format($reseller->commission_rate, 2, '.', ''),
+                        'status' => 'pending',
+                        'payment_data' => [
+                            'order_total' => number_format($order->total, 2, '.', ''),
+                            'commission_rate' => number_format($reseller->commission_rate, 2, '.', ''),
+                            'calculated_amount' => number_format($commissionAmount, 2, '.', '')
+                        ]
+                    ]);
+
+                    Log::info('Comissão do revendedor criada', [
+                        'order_id' => $order->id,
+                        'reseller_id' => $order->reseller_id,
+                        'commission_amount' => number_format($commissionAmount, 2, '.', ''),
+                        'commission_rate' => number_format($reseller->commission_rate, 2, '.', '')
+                    ]);
+                }
             }
             
             // Processa o pagamento PIX
@@ -632,5 +692,108 @@ class OrderController extends Controller
             'order' => $order->load(['items.product.department', 'payment', 'shippingMethod']),
             'errorMessage' => $request->query('errorMessage', 'O pagamento não foi aprovado. Por favor, tente novamente.')
         ]);
+    }
+
+    public function store(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Cria o pedido
+            $order = Order::create([
+                'customer_id' => auth()->id(),
+                'status' => 'pending',
+                'total' => $request->total,
+                'shipping_cost' => $request->shipping_cost,
+                'shipping_method_id' => $request->shipping_method_id,
+                'shipping_address' => $request->shipping_address,
+                'reseller_id' => $request->reseller_id, // Adiciona o ID do revendedor
+                'payment_method' => $request->payment_method,
+                'payment_status' => 'pending'
+            ]);
+
+            // Adiciona os itens do pedido
+            foreach ($request->items as $item) {
+                $order->items()->create([
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price']
+                ]);
+            }
+
+            // Se houver um revendedor associado, cria a comissão
+            if ($order->reseller_id) {
+                $reseller = $order->reseller;
+                if ($reseller && $reseller->commission_rate > 0) {
+                    // Calcula a comissão baseada no total do pedido
+                    $commissionAmount = $order->total * ($reseller->commission_rate / 100);
+
+                    // Cria o registro de comissão
+                    ResellerCommission::create([
+                        'reseller_id' => $order->reseller_id,
+                        'order_id' => $order->id,
+                        'amount' => number_format($commissionAmount, 2, '.', ''),
+                        'commission_rate' => number_format($reseller->commission_rate, 2, '.', ''),
+                        'status' => 'pending',
+                        'payment_data' => [
+                            'order_total' => number_format($order->total, 2, '.', ''),
+                            'commission_rate' => number_format($reseller->commission_rate, 2, '.', ''),
+                            'calculated_amount' => number_format($commissionAmount, 2, '.', '')
+                        ]
+                    ]);
+
+                    Log::info('Comissão do revendedor criada', [
+                        'order_id' => $order->id,
+                        'reseller_id' => $order->reseller_id,
+                        'commission_amount' => number_format($commissionAmount, 2, '.', ''),
+                        'commission_rate' => number_format($reseller->commission_rate, 2, '.', '')
+                    ]);
+                }
+            }
+
+            // Processa o pagamento de acordo com o método escolhido
+            if ($request->payment_method === 'pix') {
+                $response = $this->pagSeguroService->createPixPayment($order);
+            } else {
+                $response = $this->pagSeguroService->createCreditCardPayment($order, $request->card_data);
+            }
+
+            if ($response['status'] === 'success') {
+                // Cria o registro de pagamento
+                $payment = $order->payments()->create([
+                    'payment_method' => $request->payment_method,
+                    'amount' => $order->total,
+                    'status' => 'pending',
+                    'transaction_id' => $response['transaction_id'],
+                    'payment_data' => $response
+                ]);
+
+                DB::commit();
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Pedido criado com sucesso',
+                    'order' => $order->load('items.product'),
+                    'payment' => $payment
+                ]);
+            } else {
+                DB::rollBack();
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $response['message']
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Erro ao criar pedido', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Erro ao criar pedido. Tente novamente.'
+            ], 500);
+        }
     }
 }

@@ -31,12 +31,14 @@ class LogController extends Controller
 
             // Se o status for PAID, atualiza o pedido e o pagamento
             if ($data['status'] === 'PAID') {
-                // Busca o pedido
-                $order = Order::find($data['orderId']);
+                // Busca o pedido pelo reference_id
+                $order = Order::where('id', $data['orderId'])->first();
+                
                 if ($order) {
                     Log::info('Pedido encontrado', [
                         'order_id' => $order->id,
-                        'reseller_id' => $order->reseller_id
+                        'reseller_id' => $order->reseller_id,
+                        'total' => $order->total
                     ]);
 
                     // Atualiza o status do pedido
@@ -45,7 +47,7 @@ class LogController extends Controller
 
                     // Busca e atualiza o pagamento
                     $payment = Payment::where('order_id', $order->id)
-                        ->where('payment_method', 'pix')
+                        ->where('payment_method', $data['payment_method'] ?? 'pix')
                         ->first();
 
                     if ($payment) {
@@ -53,57 +55,25 @@ class LogController extends Controller
                         $payment->gateway_response = json_encode($data['response']);
                         $payment->save();
 
-                        // Calcula e salva a comissão do revendedor se existir
-                        if ($order->reseller_id) {
-                            $reseller = $order->reseller;
-                            Log::info('Revendedor encontrado', [
-                                'reseller_id' => $reseller->id,
-                                'commission_rate' => $reseller->commission_rate
+                        // Atualiza o status da comissão do revendedor
+                        $commission = ResellerCommission::where('order_id', $order->id)->first();
+                        
+                        if ($commission) {
+                            $commission->status = 'approved';
+                            $commission->payment_data = array_merge($commission->payment_data ?? [], [
+                                'payment_confirmed_at' => now(),
+                                'payment_method' => $data['payment_method'] ?? 'pix'
                             ]);
+                            $commission->save();
 
-                            if ($reseller && $reseller->commission_rate > 0) {
-                                // Calcula a comissão baseada no total do pedido
-                                $commissionAmount = $order->total * ($reseller->commission_rate / 100);
-
-                                // Verifica se já existe uma comissão para este pedido
-                                $existingCommission = ResellerCommission::where('order_id', $order->id)->first();
-
-                                if (!$existingCommission) {
-                                    // Cria o registro de comissão
-                                    $commission = ResellerCommission::create([
-                                        'reseller_id' => $order->reseller_id,
-                                        'order_id' => $order->id,
-                                        'amount' => $commissionAmount,
-                                        'commission_rate' => $reseller->commission_rate,
-                                        'status' => 'pending',
-                                        'payment_data' => [
-                                            'order_total' => $order->total,
-                                            'commission_rate' => $reseller->commission_rate,
-                                            'calculated_amount' => $commissionAmount
-                                        ]
-                                    ]);
-
-                                    Log::info('Comissão do revendedor criada', [
-                                        'commission_id' => $commission->id,
-                                        'order_id' => $order->id,
-                                        'reseller_id' => $order->reseller_id,
-                                        'commission_amount' => $commissionAmount,
-                                        'commission_rate' => $reseller->commission_rate
-                                    ]);
-                                } else {
-                                    Log::info('Comissão já existe para este pedido', [
-                                        'order_id' => $order->id,
-                                        'commission_id' => $existingCommission->id
-                                    ]);
-                                }
-                            } else {
-                                Log::warning('Revendedor não encontrado ou taxa de comissão zero', [
-                                    'order_id' => $order->id,
-                                    'reseller_id' => $order->reseller_id
-                                ]);
-                            }
+                            Log::info('Comissão do revendedor atualizada', [
+                                'commission_id' => $commission->id,
+                                'order_id' => $order->id,
+                                'reseller_id' => $commission->reseller_id,
+                                'status' => $commission->status
+                            ]);
                         } else {
-                            Log::info('Pedido sem revendedor associado', [
+                            Log::warning('Comissão não encontrada para o pedido', [
                                 'order_id' => $order->id
                             ]);
                         }
