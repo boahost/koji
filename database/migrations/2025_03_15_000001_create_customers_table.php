@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password');
             $table->string('document')->unique();
-            $table->string('cep', 8);
+            $table->string('cep', 10);
             $table->string('street');
             $table->string('number', 20);
             $table->string('complement')->nullable();

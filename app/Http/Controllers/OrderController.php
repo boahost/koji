@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Reseller;
 use App\Models\ResellerCommission;
+use App\Models\Wallet;
 use App\Services\PagSeguroService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -86,7 +87,10 @@ class OrderController extends Controller
                     'message' => 'Seu carrinho está vazio.'
                 ], 400);
             }
-            
+
+            // Verifica se é só crédito na carteira
+            $isOnlyWalletCredit = $cartItems->count() === 1 && $cartItems->first()->product->id == 9999;
+
             // Recupera o método de frete
             $shippingMethod = \App\Models\ShippingMethod::findOrFail($validated['shipping_method_id']);
             
@@ -95,7 +99,8 @@ class OrderController extends Controller
                 return $item->quantity * $item->price;
             });
             
-            $total = $subtotal + $shippingMethod->value;
+            $shippingValue = $isOnlyWalletCredit ? 0 : $shippingMethod->value;
+            $total = $subtotal + $shippingValue;
             
             // Verifica se há um revendedor associado na sessão
             $resellerId = null;
@@ -112,7 +117,7 @@ class OrderController extends Controller
                 'reseller_id' => $resellerId,
                 'shipping_method_id' => $shippingMethod->id,
                 'subtotal' => $subtotal,
-                'shipping_cost' => $shippingMethod->value,
+                'shipping_cost' => $shippingValue,
                 'total' => $total,
                 'status' => 'pending',
                 'address' => $validated['address'],
@@ -218,6 +223,12 @@ class OrderController extends Controller
             
             // Limpa o carrinho
             CartItem::where('customer_id', Auth::guard('customer')->id())->delete();
+
+            Wallet::create([
+                'customer_id' => Auth::guard('customer')->id(),
+                'order_id' => $order->id,
+                'valor' => $total,
+            ]);
             
             // Retorna uma resposta JSON com o redirecionamento
             return response()->json([
@@ -264,7 +275,10 @@ class OrderController extends Controller
                     'message' => 'Seu carrinho está vazio.'
                 ], 400);
             }
-            
+
+            // Verifica se é só crédito na carteira
+            $isOnlyWalletCredit = $cartItems->count() === 1 && $cartItems->first()->product->id == 9999;
+
             // Recupera o método de frete
             $shippingMethod = \App\Models\ShippingMethod::findOrFail($validated['shipping_method_id']);
             
@@ -273,7 +287,8 @@ class OrderController extends Controller
                 return $item->quantity * $item->price;
             });
             
-            $total = $subtotal + $shippingMethod->value;
+            $shippingValue = $isOnlyWalletCredit ? 0 : $shippingMethod->value;
+            $total = $subtotal + $shippingValue;
             
             // Verifica se há um revendedor associado na sessão
             $resellerId = null;
@@ -290,7 +305,7 @@ class OrderController extends Controller
                 'reseller_id' => $resellerId,
                 'shipping_method_id' => $shippingMethod->id,
                 'subtotal' => $subtotal,
-                'shipping_cost' => $shippingMethod->value,
+                'shipping_cost' => $shippingValue,
                 'total' => $total,
                 'status' => 'pending',
                 'address' => $validated['address'],

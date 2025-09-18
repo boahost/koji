@@ -22,7 +22,7 @@ class Order extends Model
         'reseller_id',
         'shipping_method_id',
         'subtotal',
-        'shipping_cost',
+        // 'shipping_cost',
         'total',
         'status',
         'notes',

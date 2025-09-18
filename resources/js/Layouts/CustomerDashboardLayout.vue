@@ -15,7 +15,7 @@ const props = defineProps({
 });
 
 const navigation = [
-    { name: 'Início', href: route('products'), icon: HomeIcon },
+            { name: 'Início', href: route('customer.dashboard'), icon: HomeIcon },
     { name: 'Pedidos', href: route('customer.dashboard'), icon: ShoppingBagIcon },
     { name: 'Carrinho', href: route('cart.index'), icon: ShoppingCartIcon },
     { name: 'Perfil', href: route('customer.profile'), icon: UserIcon },
@@ -24,7 +24,7 @@ const navigation = [
 
 <template>
     <div class="min-h-screen bg-gray-50 pb-16">
-        <AppHeader />
+        <AppHeader @search-historico="$emit('search-historico', $event)" />
         
         <!-- Customer Welcome -->
         <div v-if="customer" class="bg-white border-b border-gray-200">
@@ -48,33 +48,6 @@ const navigation = [
         <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <slot />
         </main>
-
-        <!-- Bottom Navigation -->
-        <nav class="fixed bottom-0 left-0 right-0 bg-[#231F20] border-t border-white/10 z-50">
-            <div class="max-w-7xl mx-auto px-4">
-                <div class="flex justify-around py-2">
-                    <Link
-                        v-for="item in navigation"
-                        :key="item.name"
-                        :href="item.href"
-                        class="flex flex-col items-center group transition-all duration-200"
-                        :class="{
-                            'text-white': route().current(item.href),
-                            'text-gray-400 hover:text-white': !route().current(item.href)
-                        }"
-                    >
-                        <div class="p-2.5 rounded-full transition-all duration-200"
-                            :class="{
-                                'bg-white/20': route().current(item.href),
-                                'group-hover:bg-white/10': !route().current(item.href)
-                            }">
-                            <component :is="item.icon" class="w-5 h-5" />
-                        </div>
-                        <span class="text-[10px] font-medium mt-1">{{ item.name }}</span>
-                    </Link>
-                </div>
-            </div>
-        </nav>
     </div>
 </template>
 

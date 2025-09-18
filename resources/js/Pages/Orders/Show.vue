@@ -1,5 +1,5 @@
 <template>
-    <ProductShowcaseLayout :auth="auth">
+    <ProductShowcaseLayout :auth="auth" :show-bottom-nav="false">
         <div class="animate-fade-in-up">
             <!-- Cabeçalho -->
             <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
@@ -33,12 +33,6 @@
                     <div class="divide-y divide-gray-100">
                         <div v-for="item in order.items" :key="item.id" class="p-4 sm:p-6">
                             <div class="flex gap-4">
-                                <!-- Imagem do Produto -->
-                                <div class="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
-                                    <img :src="`/storage/${item.product.featured_image}`" :alt="item.product.name"
-                                        class="w-full h-full object-cover">
-                                </div>
-
                                 <!-- Informações do Produto -->
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-start justify-between gap-4">
@@ -68,7 +62,7 @@
                 </div>
 
                 <!-- Informações do Pagamento e Entrega -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
                     <!-- Pagamento -->
                     <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
                         <h2 class="text-lg font-medium text-[#231F20]">Pagamento</h2>
@@ -98,7 +92,7 @@
                     </div>
                     
                     <!-- Entrega -->
-                    <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+                    <div v-if="!isOnlyWalletCredit" class="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
                         <h2 class="text-lg font-medium text-[#231F20]">Entrega</h2>
                         
                         <div class="mt-4 space-y-3">
@@ -138,7 +132,7 @@
                             <span class="text-gray-600">Subtotal</span>
                             <span class="font-medium text-[#231F20]">{{ formatCurrency(order.subtotal) }}</span>
                         </div>
-                        <div class="flex justify-between text-sm">
+                        <div v-if="!isOnlyWalletCredit" class="flex justify-between text-sm">
                             <span class="text-gray-600">Frete</span>
                             <span class="font-medium text-[#231F20]">{{ formatCurrency(order.shipping_cost) }}</span>
                         </div>
@@ -168,6 +162,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3'
 import ProductShowcaseLayout from '@/Layouts/ProductShowcaseLayout.vue'
+import { computed } from 'vue';
 
 const props = defineProps({
     auth: Object,
@@ -253,6 +248,10 @@ const getPaymentStatusClass = (status) => {
     
     return classMap[status] || 'text-gray-600'
 }
+
+const isOnlyWalletCredit = computed(() => {
+    return props.order.items.length === 1 && props.order.items[0].product.id === 9999;
+});
 </script>
 
 <style scoped>

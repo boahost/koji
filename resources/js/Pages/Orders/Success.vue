@@ -1,6 +1,8 @@
 <template>
-    <ProductShowcaseLayout :auth="auth">
-        <div class="animate-fade-in-up max-w-3xl mx-auto">
+    <BottomNavLayout>
+        <AppHeader @search-historico="$emit('search-historico', $event)" />
+        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div class="animate-fade-in-up max-w-3xl mx-auto">
             <div class="bg-white rounded-lg p-8 shadow-sm border border-gray-100 text-center">
                 <div class="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
                     <CheckIcon class="w-8 h-8 text-green-600" />
@@ -22,10 +24,10 @@
                             <span class="text-gray-600">Subtotal</span>
                             <span class="font-medium text-[#231F20]">{{ formatCurrency(order.subtotal) }}</span>
                         </div>
-                        <div class="flex justify-between text-sm">
+                        <!-- <div class="flex justify-between text-sm">
                             <span class="text-gray-600">Frete</span>
                             <span class="font-medium text-[#231F20]">{{ formatCurrency(order.shipping_cost) }}</span>
-                        </div>
+                        </div> -->
                         <div class="pt-3 border-t border-gray-200">
                             <div class="flex justify-between items-baseline">
                                 <span class="text-base font-medium text-[#231F20]">Total</span>
@@ -49,7 +51,7 @@
                             Ver Detalhes do Pedido
                         </Link>
                         
-                        <Link :href="route('products')"
+                        <Link :href="route('customer.dashboard')"
                             class="inline-flex items-center justify-center px-4 py-2 bg-white text-[#231F20] text-sm font-medium rounded-full border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#231F20] transition-colors"
                         >
                             Continuar Comprando
@@ -58,12 +60,14 @@
                 </div>
             </div>
         </div>
-    </ProductShowcaseLayout>
+        </main>
+    </BottomNavLayout>
 </template>
 
 <script setup>
 import { Link } from '@inertiajs/vue3'
-import ProductShowcaseLayout from '@/Layouts/ProductShowcaseLayout.vue'
+import BottomNavLayout from '@/Layouts/BottomNavLayout.vue'
+import AppHeader from '@/Components/AppHeader.vue'
 import { CheckIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({

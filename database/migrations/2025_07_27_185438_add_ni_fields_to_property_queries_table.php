@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('reseller_commissions', function (Blueprint $table) {
-            $table->json('payment_data')->nullable()->after('status');
+        Schema::table('property_queries', function (Blueprint $table) {
+            //
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('reseller_commissions', function (Blueprint $table) {
-            $table->dropColumn('payment_data');
+        Schema::table('property_queries', function (Blueprint $table) {
+            //
         });
     }
-}; 
+};

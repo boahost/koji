@@ -1,6 +1,19 @@
 <template>
-    <ProductShowcaseLayout :auth="auth">
-        <div class="animate-fade-in-up">
+    <!-- Loading Full Screen Overlay -->
+    <div v-if="isProcessingPayment" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-8 shadow-xl max-w-sm w-full mx-4">
+            <div class="flex flex-col items-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#231F20] mb-4"></div>
+                <h3 class="text-lg font-medium text-[#231F20] mb-2">Processando Pagamento...</h3>
+                <p class="text-sm text-gray-600 text-center">Aguarde enquanto processamos seu pagamento. Não feche esta página.</p>
+            </div>
+        </div>
+    </div>
+    
+    <BottomNavLayout>
+        <AppHeader @search-historico="$emit('search-historico', $event)" />
+        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div class="animate-fade-in-up">
             <!-- Cabeçalho -->
             <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
                 <h1 class="text-2xl font-bold text-[#231F20]">
@@ -24,12 +37,6 @@
                     >
                         <div v-for="item in cartItems" :key="item.id" class="p-4 sm:p-6">
                             <div class="flex gap-4">
-                                <!-- Imagem do Produto -->
-                                <div class="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
-                                    <img :src="`/storage/${item.product.featured_image}`" :alt="item.product.name"
-                                        class="w-full h-full object-cover">
-                                </div>
-
                                 <!-- Informações do Produto -->
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-start justify-between gap-4">
@@ -98,7 +105,7 @@
                     <p class="mt-2 text-sm text-gray-600">
                         Adicione produtos ao seu carrinho para continuar comprando.
                     </p>
-                    <Link :href="route('products')"
+                    <Link :href="route('customer.dashboard')"
                         class="mt-6 inline-flex items-center justify-center px-4 py-2 bg-[#231F20] text-white text-sm font-medium rounded-full hover:bg-[#231F20]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#231F20] transition-colors"
                     >
                         Continuar Comprando
@@ -106,7 +113,7 @@
                 </div>
 
                 <!-- Opções de Frete -->
-                <div v-if="cartItems.length > 0" class="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+                <div v-if="cartItems.length > 0 && !isOnlyWalletCredit" class="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
                     <h2 class="text-lg font-medium text-[#231F20]">Opções de Frete</h2>
                     
                     <div class="mt-4 space-y-3">
@@ -333,7 +340,7 @@
                 </div>
                 
                 <!-- Endereço de Entrega -->
-                <div v-if="cartItems.length > 0" class="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+                <div v-if="cartItems.length > 0 && !isOnlyWalletCredit" class="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
                     <div class="flex justify-between items-center">
                         <h2 class="text-lg font-medium text-[#231F20]">Endereço de Entrega</h2>
                         <Link 
@@ -391,14 +398,14 @@
                             <span class="text-gray-600">Subtotal</span>
                             <span class="font-medium text-[#231F20]">{{ formatCurrency(total) }}</span>
                         </div>
-                        <div class="flex justify-between text-sm">
+                        <div v-if="!isOnlyWalletCredit" class="flex justify-between text-sm">
                             <span class="text-gray-600">Frete</span>
                             <span class="font-medium text-[#231F20]">{{ selectedShipping ? formatCurrency(selectedShipping.value) : 'Grátis' }}</span>
                         </div>
                         <div class="pt-3 border-t border-gray-100">
                             <div class="flex justify-between items-baseline">
                                 <span class="text-base font-medium text-[#231F20]">Total</span>
-                                <span class="text-2xl font-bold text-[#231F20]">{{ formatCurrency(totalWithShipping) }}</span>
+                                <span class="text-2xl font-bold text-[#231F20]">{{ formatCurrency(isOnlyWalletCredit ? total : totalWithShipping) }}</span>
                             </div>
                         </div>
                         
@@ -420,28 +427,32 @@
                         transform transition-all duration-200 hover:scale-[1.02] active:scale-100
                         flex items-center justify-center gap-2"
                         :class="[
-                            selectedShipping && auth.customer && auth.customer.street ? 
+                            selectedShipping && auth.customer && auth.customer.street && !isProcessingPayment ? 
                                 'bg-[#231F20] text-white hover:bg-[#231F20]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#231F20]' : 
                                 'bg-gray-300 text-gray-500 cursor-not-allowed'
                         ]"
-                        :disabled="!selectedShipping || !auth.customer || !auth.customer.street"
+                        :disabled="!selectedShipping || !auth.customer || !auth.customer.street || isProcessingPayment"
                         @click="processPayment"
                     >
-                        <span v-if="!auth.customer || !auth.customer.street">Cadastre um endereço de entrega</span>
+                        <span v-if="isProcessingPayment">Processando...</span>
+                        <span v-else-if="!auth.customer || !auth.customer.street">Cadastre um endereço de entrega</span>
                         <span v-else-if="!selectedShipping">Selecione um método de frete</span>
                         <span v-else>Finalizar Compra com {{ selectedPaymentMethod === 'credit-card' ? 'Cartão de Crédito' : 'PIX' }}</span>
-                        <ArrowRightIcon class="w-4 h-4" />
+                        <ArrowRightIcon v-if="!isProcessingPayment" class="w-4 h-4" />
+                        <div v-else class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     </button>
                 </div>
             </div>
         </div>
-    </ProductShowcaseLayout>
+        </main>
+    </BottomNavLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { Link } from '@inertiajs/vue3'
-import ProductShowcaseLayout from '@/Layouts/ProductShowcaseLayout.vue'
+import BottomNavLayout from '@/Layouts/BottomNavLayout.vue'
+import AppHeader from '@/Components/AppHeader.vue'
 import { 
     ShoppingCartIcon,
     TrashIcon,
@@ -454,6 +465,7 @@ import {
     ExclamationTriangleIcon
 } from '@heroicons/vue/24/outline'
 import axios from 'axios'
+import Swal from 'sweetalert2'
 
 const props = defineProps({
     auth: Object,
@@ -467,6 +479,7 @@ const props = defineProps({
 // Estados de loading
 const updatingQuantity = ref({})
 const removingItem = ref({})
+const isProcessingPayment = ref(false)
 
 // Estados do cartão de crédito
 const cardNumber = ref('')
@@ -479,12 +492,15 @@ const selectedShipping = ref(props.selectedShippingMethod || props.shippingMetho
 
 // Calcula o valor total com frete
 const totalWithShipping = computed(() => {
-    let shippingValue = 0
-    if (selectedShipping.value) {
-        shippingValue = parseFloat(selectedShipping.value.value)
+    if (isOnlyWalletCredit.value) {
+        return props.total;
     }
-    return props.total + shippingValue
-})
+    let shippingValue = 0;
+    if (selectedShipping.value) {
+        shippingValue = parseFloat(selectedShipping.value.value);
+    }
+    return props.total + shippingValue;
+});
 
 // Seleciona um método de frete
 const selectShippingMethod = (method) => {
@@ -588,14 +604,24 @@ const processPayment = async () => {
         // Verifica se todos os campos necessários estão preenchidos para cartão de crédito
         if (selectedPaymentMethod.value === 'credit-card') {
             if (!cardNumber.value || !cardHolder.value || !cardExpiryMonth.value || !cardExpiryYear.value || !cardCvv.value) {
-                alert('Por favor, preencha todos os campos do cartão de crédito');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Campos Obrigatórios',
+                    text: 'Por favor, preencha todos os campos do cartão de crédito',
+                    confirmButtonColor: '#231F20'
+                });
                 return;
             }
         }
 
         // Verifica se o método de frete foi selecionado
         if (!selectedShipping.value || !selectedShipping.value.id) {
-            alert('Por favor, selecione um método de frete');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Método de Frete',
+                text: 'Por favor, selecione um método de frete',
+                confirmButtonColor: '#231F20'
+            });
             return;
         }
 
@@ -614,9 +640,29 @@ const processPayment = async () => {
                 state: !customer.state,
                 cep: !customer.cep
             });
-            alert('Por favor, complete seu endereço antes de continuar');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Endereço Incompleto',
+                text: 'Por favor, complete seu endereço antes de continuar',
+                confirmButtonColor: '#231F20'
+            });
             return;
         }
+        
+        // Ativa o loading full screen
+        isProcessingPayment.value = true;
+        
+        // Mostra o loading do SweetAlert2
+        Swal.fire({
+            title: 'Processando Pagamento...',
+            html: 'Aguarde enquanto processamos seu pagamento',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
         
         // Prepara os dados do pagamento
         const paymentData = {
@@ -649,6 +695,9 @@ const processPayment = async () => {
         try {
             const response = await axios.post(endpoint, paymentData);
             
+            // Fecha o loading
+            Swal.close();
+            
             // Verifica se a resposta foi bem sucedida
             if (response.data.success) {
                 // Se houver URL de redirecionamento, redireciona
@@ -665,19 +714,52 @@ const processPayment = async () => {
                 } else {
                     // Se não houver URL de redirecionamento, exibe a mensagem de erro
                     if (response.data.message) {
-                        alert(response.data.message);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro no Pagamento',
+                            text: response.data.message,
+                            confirmButtonColor: '#231F20'
+                        });
                     } else {
-                        alert('Erro ao processar o pagamento. Por favor, tente novamente.');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro no Pagamento',
+                            text: 'Erro ao processar o pagamento. Por favor, tente novamente.',
+                            confirmButtonColor: '#231F20'
+                        });
                     }
                 }
             }
         } catch (error) {
             console.error('Erro ao processar pagamento:', error);
-            alert('Erro ao processar o pagamento. Por favor, tente novamente.');
+            
+            // Fecha o loading
+            Swal.close();
+            
+            // Exibe erro no SweetAlert2
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro no Pagamento',
+                text: error.response?.data?.message || 'Erro ao processar o pagamento. Por favor, tente novamente.',
+                confirmButtonColor: '#231F20'
+            });
         }
     } catch (error) {
         console.error('Erro ao processar pagamento:', error);
-        alert('Erro ao processar o pagamento. Por favor, tente novamente.');
+        
+        // Fecha o loading
+        Swal.close();
+        
+        // Exibe erro no SweetAlert2
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro no Pagamento',
+            text: 'Erro ao processar o pagamento. Por favor, tente novamente.',
+            confirmButtonColor: '#231F20'
+        });
+    } finally {
+        // Desativa o loading
+        isProcessingPayment.value = false;
     }
 }
 
@@ -688,6 +770,10 @@ const formatCurrency = (value) => {
         currency: 'BRL'
     }).format(value)
 }
+
+const isOnlyWalletCredit = computed(() => {
+    return props.cartItems.length === 1 && props.cartItems[0].product.id === 9999;
+});
 </script>
 
 <style scoped>

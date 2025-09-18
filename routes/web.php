@@ -17,12 +17,16 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\SalesController;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// Rota principal redireciona para a página de produtos
+// Rota principal - redireciona para dashboard do cliente ou login
 Route::get('/', function () {
-    return redirect()->route('products');
+    if (Auth::guard('customer')->check()) {
+        return redirect()->route('customer.dashboard');
+    }
+    return redirect()->route('customer.login');
 });
 
 // Redireciona /login para o login do cliente
@@ -93,13 +97,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Rotas de Vendas
     Route::get('/sales', [SalesController::class, 'index'])->name('sales.index');
+    Route::get('/sales/reports', [SalesController::class, 'reports'])->name('sales.reports');
     Route::get('/sales/{order}', [SalesController::class, 'show'])->name('sales.show');
 });
 
 
 // Rotas do Revendedor
-// Rotas públicas
-Route::get('/produtos', [ProductShowcaseController::class, 'index'])->name('products');
 
 // Rotas do carrinho
 Route::middleware('auth:customer')->group(function () {
@@ -141,11 +144,20 @@ Route::middleware('guest:customer')->prefix('cliente')->group(function () {
 Route::middleware('auth:customer')->prefix('cliente')->group(function () {
     Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('customer.logout');
     Route::get('/minha-conta', [CustomerAuthController::class, 'dashboard'])->name('customer.dashboard');
+    Route::post('/adicionar-saldo', [CustomerAuthController::class, 'addWalletValue'])->name('customer.wallet.add');
     Route::get('/perfil', [CustomerAuthController::class, 'profile'])->name('customer.profile');
     Route::put('/perfil', [CustomerAuthController::class, 'updateProfile'])->name('customer.profile.update');
+    Route::post('/buscar-imovel', [CustomerAuthController::class, 'buscarImovel'])->name('customer.buscar-imovel');
+    Route::post('/buscar-por-ni', [CustomerAuthController::class, 'buscarPorNI'])->name('customer.buscar-por-ni');
+    Route::get('/historico-imovel', [CustomerAuthController::class, 'historicoImovel'])->name('customer.historico-imovel');
+    Route::get('/historico-por-ni', [CustomerAuthController::class, 'historicoPorNI'])->name('customer.historico-por-ni');
+    Route::get('/historico-por-codigo', [CustomerAuthController::class, 'historicoPorCodigo'])->name('customer.historico-por-codigo');
+    Route::get('/exportar-historico-imovel-pdf', [CustomerAuthController::class, 'exportarHistoricoImovelPdf'])->name('customer.exportar-historico-imovel-pdf');
+    Route::get('/exportar-consulta-imovel-pdf/{id}', [CustomerAuthController::class, 'exportarConsultaImovelPdf'])->name('customer.exportar-consulta-imovel-pdf');
     
     // Rotas de pedidos
     Route::get('/pedidos', [CustomerAuthController::class, 'orders'])->name('customer.orders');
+    Route::get('/pedidos/count', [CustomerAuthController::class, 'ordersCount'])->name('customer.orders.count');
 });
 
 Route::middleware('web')->group(function () {

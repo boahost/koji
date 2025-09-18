@@ -422,7 +422,7 @@ const formatCurrency = (value) => {
 
 const applyFilters = debounce(() => {
     router.get(
-        route('products'),
+        route('customer.dashboard'),
         { ...filters.value },
         { preserveState: true }
     )

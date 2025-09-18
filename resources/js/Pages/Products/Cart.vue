@@ -6,7 +6,7 @@
             <div v-if="cartItems.length === 0" class="text-center py-12">
                 <p class="text-gray-500 mb-4">Seu carrinho está vazio</p>
                 <Link
-                    :href="route('products')"
+                    :href="route('customer.dashboard')"
                     class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#231F20] hover:bg-[#231F20]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#231F20]"
                 >
                     Continuar Comprando

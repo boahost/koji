@@ -1,7 +1,8 @@
 <script setup>
 import { ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import CustomerDashboardLayout from '@/Layouts/CustomerDashboardLayout.vue';
+import BottomNavLayout from '@/Layouts/BottomNavLayout.vue';
+import AppHeader from '@/Components/AppHeader.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import InputError from '@/Components/InputError.vue';
@@ -67,8 +68,10 @@ const updatePassword = () => {
 <template>
     <Head title="Perfil" />
 
-    <CustomerDashboardLayout :customer="customer">
-        <div class="animate-fade-in-up">
+    <BottomNavLayout>
+        <AppHeader @search-historico="$emit('search-historico', $event)" />
+        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div class="animate-fade-in-up">
             <!-- Header -->
             <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
                 <h1 class="text-2xl font-bold text-[#231F20]">
@@ -343,7 +346,8 @@ const updatePassword = () => {
             </form>
 
         </div>
-    </CustomerDashboardLayout>
+        </main>
+    </BottomNavLayout>
 </template>
 
 <style>

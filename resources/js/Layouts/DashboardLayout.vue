@@ -32,7 +32,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                                             </svg>
                                         </div>
-                                        <span class="text-white text-xl font-bold">Projeto-DF</span>
+                                        <span class="text-white text-xl font-bold">Consulta Imoveis</span>
                                     </Link>
                                 </div>
                                 <nav class="flex flex-1 flex-col pt-8">
@@ -153,7 +153,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
                         </div>
-                        <span class="text-white text-xl font-bold">Projeto-DF</span>
+                        <span class="text-white text-xl font-bold">Consulta Imoveis</span>
                     </Link>
                 </div>
                 <nav class="flex flex-1 flex-col pt-8">
@@ -348,51 +348,7 @@ const navigation = [
         current: route().current('sales.*'),
         submenu: [
             { name: 'Listar', href: route('sales.index'), current: route().current('sales.index') },
-        ]
-    },
-    {
-        name: 'Produtos',
-        icon: ShoppingBagIcon,
-        current: route().current('products.*'),
-        submenu: [
-            { name: 'Listar', href: route('products.index'), current: route().current('products.index') },
-            { name: 'Cadastrar', href: route('products.create'), current: route().current('products.create') },
-        ]
-    },
-    {
-        name: 'Categorias',
-        icon: TagIcon,
-        current: route().current('categories.*'),
-        submenu: [
-            { name: 'Listar', href: route('categories'), current: route().current('categories') },
-            { name: 'Cadastrar', href: route('categories.create'), current: route().current('categories.create') },
-        ]
-    },
-    {
-        name: 'Departamentos',
-        icon: BuildingOfficeIcon,
-        current: route().current('departments.*'),
-        submenu: [
-            { name: 'Listar', href: route('departments'), current: route().current('departments') },
-            { name: 'Cadastrar', href: route('departments.create'), current: route().current('departments.create') },
-        ]
-    },
-    {
-        name: 'Fretes',
-        icon: TruckIcon,
-        current: route().current('shipping-methods.*'),
-        submenu: [
-            { name: 'Listar', href: route('shipping-methods.index'), current: route().current('shipping-methods.index') },
-            { name: 'Cadastrar', href: route('shipping-methods.create'), current: route().current('shipping-methods.create') },
-        ]
-    },
-    {
-        name: 'Revendedores',
-        icon: UsersIcon,
-        current: route().current('resellers.*'),
-        submenu: [
-            { name: 'Listar', href: route('resellers.index'), current: route().current('resellers.index') },
-            { name: 'Cadastrar', href: route('resellers.create'), current: route().current('resellers.create') },
+            { name: 'Relatórios', href: route('sales.reports'), current: route().current('sales.reports') },
         ]
     },
     {

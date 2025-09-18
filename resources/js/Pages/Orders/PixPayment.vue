@@ -1,6 +1,8 @@
 <template>
-    <div class="bg-gray-50 min-h-screen">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <BottomNavLayout>
+        <AppHeader @search-historico="$emit('search-historico', $event)" />
+        <main class="bg-gray-50 min-h-screen">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Cabeçalho -->
             <div class="mb-8">
                 <h1 class="text-2xl font-bold text-gray-900">Pagamento PIX</h1>
@@ -100,12 +102,15 @@
                 </div>
             </div>
         </div>
-    </div>
+        </main>
+    </BottomNavLayout>
 </template>
 
 <script setup>
 import { Link, usePage, router } from '@inertiajs/vue3'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import BottomNavLayout from '@/Layouts/BottomNavLayout.vue'
+import AppHeader from '@/Components/AppHeader.vue'
 import axios from 'axios'
 
 const props = defineProps({

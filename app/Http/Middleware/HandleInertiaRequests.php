@@ -37,6 +37,7 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'message' => fn () => $request->session()->get('message'),
                 'error' => fn () => $request->session()->get('error'),
+                'status' => fn () => $request->session()->get('status'),
             ],
             'errors' => fn () => $this->resolveValidationErrors($request),
             'pagseguro_token' => config('services.pagseguro.token'),

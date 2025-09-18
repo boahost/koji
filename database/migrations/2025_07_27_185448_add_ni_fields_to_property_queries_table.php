@@ -1,0 +1,29 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('property_queries', function (Blueprint $table) {
+            $table->string('ni_consultado')->nullable()->after('codigo_imovel');
+            $table->enum('tipo_consulta', ['codigo', 'ni'])->default('codigo')->after('ni_consultado');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('property_queries', function (Blueprint $table) {
+            $table->dropColumn(['ni_consultado', 'tipo_consulta']);
+        });
+    }
+};

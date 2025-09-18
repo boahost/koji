@@ -1,6 +1,8 @@
 <template>
-    <ProductShowcaseLayout :auth="auth">
-        <div class="animate-fade-in-up max-w-3xl mx-auto">
+    <BottomNavLayout>
+        <AppHeader @search-historico="$emit('search-historico', $event)" />
+        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div class="animate-fade-in-up max-w-3xl mx-auto">
             <div class="bg-white rounded-lg p-8 shadow-sm border border-gray-100 text-center">
                 <div class="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center">
                     <XMarkIcon class="w-8 h-8 text-red-600" />
@@ -35,12 +37,14 @@
                 </div>
             </div>
         </div>
-    </ProductShowcaseLayout>
+        </main>
+    </BottomNavLayout>
 </template>
 
 <script setup>
 import { Link } from '@inertiajs/vue3'
-import ProductShowcaseLayout from '@/Layouts/ProductShowcaseLayout.vue'
+import BottomNavLayout from '@/Layouts/BottomNavLayout.vue'
+import AppHeader from '@/Components/AppHeader.vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({

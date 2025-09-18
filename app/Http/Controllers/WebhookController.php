@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Models\Wallet;
 
 class WebhookController extends Controller
 {
@@ -193,6 +194,16 @@ class WebhookController extends Controller
             // Atualiza o status do pedido usando a função updateOrderStatus
             $this->updateOrderStatus($order, 'approved');
             
+            // Se o pedido for só de crédito na carteira, credita o valor na wallet
+            if ($order->items()->count() === 1 && $order->items()->first()->product_id == 9999) {
+                $wallet = $order->customer->wallet;
+                if (!$wallet) {
+                    $wallet = $order->customer->wallet()->create(['valor' => 0]);
+                }
+                $wallet->valor += $order->total;
+                $wallet->save();
+            }
+
             // Se o pedido tiver um revendedor associado, calcula e registra as comissões
             if ($order->reseller_id) {
                 $this->calculateAndSaveCommissions($order);

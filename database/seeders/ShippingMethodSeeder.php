@@ -12,8 +12,11 @@ class ShippingMethodSeeder extends Seeder
      */
     public function run(): void
     {
-        // Limpa os métodos de frete existentes
-        ShippingMethod::truncate();
+        // Verifica se já existem métodos de frete
+        if (ShippingMethod::count() > 0) {
+            $this->command->info('Métodos de frete já existem. Pulando...');
+            return;
+        }
         
         // Cria os métodos de frete
         ShippingMethod::create([
@@ -36,5 +39,7 @@ class ShippingMethodSeeder extends Seeder
             'value' => 39.90,
             'active' => true,
         ]);
+        
+        $this->command->info('Métodos de frete criados com sucesso!');
     }
 }

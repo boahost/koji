@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen bg-gray-50 pb-16">
+    <div class="min-h-screen bg-gray-50" :class="{ 'pb-16': showBottomNav }">
         <AppHeader @toggle-filters="$emit('toggle-filters')">
             <template #default>filter</template>
         </AppHeader>
@@ -32,22 +32,22 @@
 
 
         <!-- Mobile Navigation -->
-        <nav class="fixed bottom-0 left-0 right-0 bg-[#231F20] border-t border-white/10 z-50">
+        <nav v-if="showBottomNav" class="fixed bottom-0 left-0 right-0 bg-[#231F20] border-t border-white/10 z-50">
             <div class="max-w-7xl mx-auto px-4">
                 <div class="flex justify-around py-2">
                     <!-- Início -->
                     <Link
-                        :href="route('products')"
+                        :href="route('customer.dashboard')"
                         class="flex flex-col items-center group transition-all duration-200"
                         :class="{
-                            'text-white': currentRoute === 'products',
-                            'text-gray-400 hover:text-white': currentRoute !== 'products'
+                            'text-white': currentRoute === 'customer.dashboard',
+                            'text-gray-400 hover:text-white': currentRoute !== 'customer.dashboard'
                         }"
                     >
                         <div class="p-2.5 rounded-full transition-all duration-200"
                             :class="{
-                                'bg-white/20': currentRoute === 'products',
-                                'group-hover:bg-white/10': currentRoute !== 'products'
+                                'bg-white/20': currentRoute === 'customer.dashboard',
+                                'group-hover:bg-white/10': currentRoute !== 'customer.dashboard'
                             }">
                             <HomeIcon class="w-5 h-5" />
                         </div>
@@ -138,6 +138,14 @@ const updateCartCount = async () => {
         console.error('Erro ao buscar contagem do carrinho:', error)
     }
 }
+
+// Define as props
+const props = defineProps({
+    showBottomNav: {
+        type: Boolean,
+        default: true
+    }
+})
 
 // Define os emits
 const emits = defineEmits(['toggle-filters'])

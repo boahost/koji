@@ -7,7 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use App\Models\Product;
+use App\Models\Wallet;
+use App\Models\CartItem;
+use Illuminate\Support\Facades\Http;
+use App\Models\PropertyQuery;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class CustomerAuthController extends Controller
 {
@@ -26,14 +33,14 @@ class CustomerAuthController extends Controller
         // Verifica se o usuário existe
         $customer = Customer::where('email', $credentials['email'])->first();
         
-        \Log::info('Tentativa de login', [
+        Log::info('Tentativa de login', [
             'email' => $credentials['email'],
             'customer_exists' => $customer ? 'sim' : 'não',
             'password_provided' => !empty($credentials['password']) ? 'sim' : 'não'
         ]);
 
         if (!$customer) {
-            \Log::warning('Tentativa de login com email não encontrado', ['email' => $credentials['email']]);
+            Log::warning('Tentativa de login com email não encontrado', ['email' => $credentials['email']]);
             return back()->withErrors([
                 'email' => 'Email não encontrado.',
             ]);
@@ -41,14 +48,14 @@ class CustomerAuthController extends Controller
 
         // Tenta fazer login
         if (Auth::guard('customer')->attempt($credentials, $request->boolean('remember'))) {
-            \Log::info('Login bem-sucedido', ['email' => $credentials['email']]);
+            Log::info('Login bem-sucedido', ['email' => $credentials['email']]);
             $request->session()->regenerate();
 
             return redirect()->intended(route('customer.dashboard'));
         }
 
         // Se chegou aqui, a senha está incorreta
-        \Log::warning('Tentativa de login com senha incorreta', ['email' => $credentials['email']]);
+        Log::warning('Tentativa de login com senha incorreta', ['email' => $credentials['email']]);
         return back()->withErrors([
             'email' => 'A senha está incorreta.',
         ]);
@@ -61,15 +68,25 @@ class CustomerAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('products');
+        return redirect()->route('customer.login');
     }
 
     public function dashboard()
     {
         $customer = Auth::guard('customer')->user();
+        
+        // Calcula o saldo total somando todos os registros da wallet
+        $valorConta = Wallet::where('customer_id', $customer->id)->sum('valor');
+        
+        // Se não há registros, cria um registro inicial com saldo zero
+        if ($valorConta === null) {
+            $customer->wallet()->create(['valor' => 0]);
+            $valorConta = 0;
+        }
 
         return Inertia::render('Customers/Dashboard/Index', [
             'customer' => $customer,
+            'walletValue' => $valorConta,
             'ordersCount' => 0, // TODO: Implementar contagem de pedidos
             'cartItemsCount' => 0, // TODO: Implementar contagem de itens no carrinho
         ]);
@@ -200,6 +217,13 @@ class CustomerAuthController extends Controller
         ]);
     }
 
+    public function ordersCount()
+    {
+        $customer = Auth::guard('customer')->user();
+        $count = $customer->orders()->count();
+        return response()->json(['count' => $count]);
+    }
+
     public function favorites()
     {
         return Inertia::render('Customers/Favorites/Index', [
@@ -229,13 +253,35 @@ class CustomerAuthController extends Controller
             'email' => 'required|email',
         ]);
 
+        Log::info('Tentativa de reset de senha', [
+            'email' => $request->email,
+            'ip' => $request->ip()
+        ]);
+
         $status = Password::broker('customers')->sendResetLink(
             $request->only('email')
         );
 
-        return $status === Password::RESET_LINK_SENT
-            ? back()->with(['status' => __($status)])
-            : back()->withErrors(['email' => __($status)]);
+        Log::info('Resultado do reset de senha', [
+            'email' => $request->email,
+            'status' => $status,
+            'success' => $status === Password::RESET_LINK_SENT
+        ]);
+
+        if ($status === Password::RESET_LINK_SENT) {
+            Log::info('Email de reset enviado com sucesso', ['email' => $request->email]);
+            return back()->with(['status' => 'Link de redefinição de senha enviado para seu email!']);
+        } else {
+            Log::warning('Erro ao enviar email de reset', ['email' => $request->email, 'status' => $status]);
+            
+            $errorMessage = match($status) {
+                Password::RESET_THROTTLED => 'Muitas tentativas. Aguarde alguns segundos e tente novamente.',
+                Password::INVALID_USER => 'Email não encontrado em nossa base de dados.',
+                default => 'Não foi possível enviar o link de redefinição. Verifique se o email está correto.'
+            };
+            
+            return back()->withErrors(['email' => $errorMessage]);
+        }
     }
 
     public function showResetPassword(Request $request)
@@ -266,5 +312,173 @@ class CustomerAuthController extends Controller
         return $status === Password::PASSWORD_RESET
             ? redirect()->route('customer.login')->with('status', __($status))
             : back()->withErrors(['email' => __($status)]);
+    }
+
+    public function addWalletValue(Request $request)
+    {
+        $request->validate([
+            'valor' => 'required|numeric|min:0.01',
+        ]);
+
+        $valor = $request->valor;
+        if (is_string($valor)) {
+            $valor = str_replace('.', '', $valor);
+            $valor = str_replace(',', '.', $valor);
+            $valor = floatval($valor);
+        }
+
+        $customer = Auth::guard('customer')->user();
+        $product = Product::find(9999);
+        if (!$product) {
+            return back()->withErrors(['message' => 'Produto de crédito não encontrado.']);
+        }
+
+        // Remove qualquer item de crédito já existente no carrinho
+        CartItem::where('customer_id', $customer->id)
+            ->where('product_id', $product->id)
+            ->delete();
+
+        // Adiciona o produto de crédito ao carrinho com o valor desejado
+        CartItem::create([
+            'customer_id' => $customer->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'price' => $valor,
+            'reseller_id' => null
+        ]);
+
+        return redirect()->route('cart.index')->with('success', 'Produto de crédito adicionado ao carrinho. Realize o pagamento para creditar o saldo!');
+    }
+
+    public function buscarImovel(Request $request)
+    {
+        $request->validate([
+            'codigo' => 'required|string',
+        ]);
+
+        $customer = Auth::guard('customer')->user();
+        $wallet = $customer->wallet;
+        if (!$wallet || $wallet->valor < 20) {
+            return response()->json(['error' => 'Saldo insuficiente para realizar a consulta.'], 403);
+        }
+
+        $codigo = $request->codigo;
+        $bearer = '06aef429-a981-3ec5-a1f8-71d38d86481e';
+        $url = "https://gateway.apiserpro.serpro.gov.br/consulta-ccir-trial/v1/consultarDadosCcirPorCodigoImovel/{$codigo}";
+
+        $response = Http::withHeaders([
+            'accept' => '*/*',
+            'x-signature' => '1',
+            'Authorization' => 'Bearer ' . $bearer,
+        ])->get($url);
+
+        if ($response->failed()) {
+            return response()->json(['error' => 'Erro ao consultar imóvel.'], 400);
+        }
+
+        // Abate R$20 do saldo e registra negativo na wallet
+        // $wallet->valor -= 20;
+        // $wallet->save();
+        $customer->wallet()->create([
+            'valor' => -20
+        ]);
+
+        // Registrar consulta no histórico
+        PropertyQuery::create([
+            'customer_id' => $customer->id,
+            'codigo_imovel' => $codigo,
+            'resposta_api' => $response->json(),
+            'tipo_consulta' => 'codigo'
+        ]);
+
+        return response()->json(['data' => $response->json()]);
+    }
+
+    public function buscarPorNI(Request $request)
+    {
+        $request->validate([
+            'ni' => 'required|string',
+        ]);
+
+        $customer = Auth::guard('customer')->user();
+        $wallet = $customer->wallet;
+        if (!$wallet || $wallet->valor < 20) {
+            return response()->json(['error' => 'Saldo insuficiente para realizar a consulta.'], 403);
+        }
+
+        $ni = $request->ni;
+        $bearer = '06aef429-a981-3ec5-a1f8-71d38d86481e';
+        $url = "https://gateway.apiserpro.serpro.gov.br/consulta-ccir-trial/v1/consultarCodigoImovelPorNI/{$ni}";
+
+        $response = Http::withHeaders([
+            'accept' => '*/*',
+            'x-signature' => '1',
+            'Authorization' => 'Bearer ' . $bearer,
+        ])->get($url);
+
+        if ($response->failed()) {
+            return response()->json(['error' => 'Erro ao consultar imóveis por NI.'], 400);
+        }
+
+        // Abate R$20 do saldo e registra negativo na wallet
+        // $wallet->valor -= 20;
+        // $wallet->save();
+        $customer->wallet()->create([
+            'valor' => -20
+        ]);
+
+        // Registrar consulta por NI no histórico
+        PropertyQuery::create([
+            'customer_id' => $customer->id,
+            'codigo_imovel' => null,
+            'ni_consultado' => $ni,
+            'resposta_api' => $response->json(),
+            'tipo_consulta' => 'ni'
+        ]);
+
+        return response()->json(['data' => $response->json()]);
+    }
+
+    public function historicoImovel()
+    {
+        $customer = Auth::guard('customer')->user();
+        $historico = $customer->propertyQueries()->orderByDesc('created_at')->get(['id', 'codigo_imovel', 'ni_consultado', 'resposta_api', 'tipo_consulta', 'created_at']);
+        return response()->json(['historico' => $historico]);
+    }
+
+    public function historicoPorNI()
+    {
+        $customer = Auth::guard('customer')->user();
+        $historico = $customer->propertyQueries()
+            ->where('tipo_consulta', 'ni')
+            ->orderByDesc('created_at')
+            ->get(['id', 'ni_consultado', 'resposta_api', 'created_at']);
+        return response()->json(['historico' => $historico]);
+    }
+
+    public function historicoPorCodigo()
+    {
+        $customer = Auth::guard('customer')->user();
+        $historico = $customer->propertyQueries()
+            ->where('tipo_consulta', 'codigo')
+            ->orderByDesc('created_at')
+            ->get(['id', 'codigo_imovel', 'resposta_api', 'created_at']);
+        return response()->json(['historico' => $historico]);
+    }
+
+    public function exportarHistoricoImovelPdf()
+    {
+        $customer = Auth::guard('customer')->user();
+        $historico = $customer->propertyQueries()->orderByDesc('created_at')->get();
+        $pdf = Pdf::loadView('pdf.historico_imovel', ['historico' => $historico, 'customer' => $customer]);
+        return $pdf->download('historico-consultas-imovel.pdf');
+    }
+
+    public function exportarConsultaImovelPdf($id)
+    {
+        $customer = Auth::guard('customer')->user();
+        $consulta = $customer->propertyQueries()->where('id', $id)->firstOrFail();
+        $pdf = Pdf::loadView('pdf.consulta_imovel', ['consulta' => $consulta, 'customer' => $customer]);
+        return $pdf->download('consulta-imovel-'.$consulta->codigo_imovel.'.pdf');
     }
 }

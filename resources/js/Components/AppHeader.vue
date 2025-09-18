@@ -1,14 +1,17 @@
 <template>
-    <header class="bg-[#231F20] shadow-sm sticky top-0 z-30">
+    <header class="bg-[#231F20] shadow-sm sticky top-0 z-30 mb-0 md:mb-4">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <!-- Logo e Redes Sociais -->
             <div class="flex items-center justify-between mb-3">
                 <div class="w-10"></div>
 
                 <!-- Logo (Centro) -->
-                <Link :href="route('products')" class="inline-block">
+                <!-- <Link :href="route('products')" class="inline-block">
                     <img src="/logo.png" class="h-10 sm:h-12 w-auto object-contain" alt="Logo">
-                </Link>
+                </Link> -->
+                <div class="inline-block select-none">
+                    <span class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow" style="letter-spacing: 0.1em;">consultadeimoveis.com</span>
+                </div>
 
                 <!-- Redes Sociais (Direita) -->
                 <div class="flex items-center space-x-4">
@@ -47,10 +50,10 @@
                             id="search"
                             name="search"
                             class="block w-full pl-10 pr-3 py-2.5 border-0 rounded-full text-sm bg-white/10 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-white/25 focus:bg-white/20 transition-all duration-200"
-                            placeholder="Buscar produtos..."
+                            placeholder="Buscar no histórico de consultas de imóvel..."
                             type="search"
                             v-model="search"
-                            @input="debouncedSearch"
+                            @input="$emit('search-historico', search)"
                         >
                     </div>
                 </div>
@@ -65,29 +68,132 @@
                 </button>
             </div>
         </div>
+        
+        <!-- Menu Desktop -->
+        <nav class="hidden md:block bg-white border-t border-gray-200 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-center space-x-8 py-4">
+                    <!-- Início -->
+                    <Link
+                        :href="route('customer.dashboard')"
+                        class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 group"
+                        :class="{
+                            'bg-[#231F20] text-white shadow-md': route().current('customer.dashboard'),
+                            'text-gray-600 hover:text-[#231F20] hover:bg-gray-50': !route().current('customer.dashboard')
+                        }"
+                    >
+                        <HomeIcon class="w-5 h-5" />
+                        <span class="font-medium">Início</span>
+                    </Link>
+
+                    <!-- Pedidos -->
+                    <Link
+                        :href="route('orders.index')"
+                        class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 group relative"
+                        :class="{
+                            'bg-[#231F20] text-white shadow-md': route().current('orders.*'),
+                            'text-gray-600 hover:text-[#231F20] hover:bg-gray-50': !route().current('orders.*')
+                        }"
+                    >
+                        <ShoppingBagIcon class="w-5 h-5" />
+                        <span class="font-medium">Pedidos</span>
+                        <span v-if="ordersCount > 0" 
+                            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center animate-pulse"
+                        >
+                            {{ ordersCount }}
+                        </span>
+                    </Link>
+
+                    <!-- Carrinho -->
+                    <Link
+                        :href="route('cart.index')"
+                        class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 group relative"
+                        :class="{
+                            'bg-[#231F20] text-white shadow-md': route().current('cart.*'),
+                            'text-gray-600 hover:text-[#231F20] hover:bg-gray-50': !route().current('cart.*')
+                        }"
+                    >
+                        <ShoppingCartIcon class="w-5 h-5" />
+                        <span class="font-medium">Carrinho</span>
+                        <span v-if="cartItemCount > 0" 
+                            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center animate-pulse"
+                        >
+                            {{ cartItemCount }}
+                        </span>
+                    </Link>
+
+                    <!-- Perfil -->
+                    <Link
+                        :href="route('customer.profile')"
+                        class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 group"
+                        :class="{
+                            'bg-[#231F20] text-white shadow-md': route().current('customer.profile'),
+                            'text-gray-600 hover:text-[#231F20] hover:bg-gray-50': !route().current('customer.profile')
+                        }"
+                    >
+                        <UserIcon class="w-5 h-5" />
+                        <span class="font-medium">Perfil</span>
+                    </Link>
+                </div>
+            </div>
+        </nav>
     </header>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { 
     MagnifyingGlassIcon, 
     FunnelIcon,
+    HomeIcon,
+    ShoppingBagIcon,
+    ShoppingCartIcon,
+    UserIcon,
 } from '@heroicons/vue/24/outline'
 import debounce from 'lodash/debounce'
+import axios from 'axios'
 
 const emit = defineEmits(['toggle-filters'])
 
 const search = ref('')
 
-const debouncedSearch = debounce(() => {
-    if (search.value) {
-        router.get(
-            route('products'),
-            { search: search.value },
-            { preserveState: true, preserveScroll: true }
-        )
+// Contadores
+const cartItemCount = ref(0)
+const ordersCount = ref(0)
+
+// Atualiza o contador do carrinho
+const updateCartCount = async () => {
+    try {
+        const response = await axios.get(route('cart.count'))
+        cartItemCount.value = response.data.count
+    } catch (error) {
+        console.error('Erro ao buscar contagem do carrinho:', error)
     }
-}, 300)
+}
+
+// Atualiza o contador de pedidos
+const updateOrdersCount = async () => {
+    try {
+        const response = await axios.get(route('customer.orders.count'))
+        ordersCount.value = response.data.count
+    } catch (error) {
+        console.error('Erro ao buscar contagem de pedidos:', error)
+    }
+}
+
+// Atualiza os contadores ao montar o componente
+onMounted(() => {
+    updateCartCount()
+    updateOrdersCount()
+
+    // Escuta eventos de atualização do carrinho
+    window.addEventListener('cart-updated', (event) => {
+        if (event.detail && typeof event.detail.count === 'number') {
+            cartItemCount.value = event.detail.count
+        } else {
+            updateCartCount()
+        }
+    })
+})
 </script>
