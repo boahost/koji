@@ -36,7 +36,7 @@ const navigation = [
                     :href="route('customer.logout')"
                     method="post"
                     as="button"
-                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-full text-white bg-[#231F20] hover:bg-[#231F20]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#231F20] transition-colors duration-200"
+                    class="inline-flex items-center px-3 py-1.5 border border-transparent hover:border-[#C0A062]/50 text-sm font-medium rounded-full text-white bg-[#231F20] hover:bg-[#231F20]/90 hover:text-[#C0A062] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#C0A062] transition-all duration-200"
                 >
                     <ArrowRightOnRectangleIcon class="h-4 w-4 mr-1.5" />
                     Sair

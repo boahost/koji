@@ -28,7 +28,7 @@ const submit = () => {
     <div class="min-h-screen bg-[#F5F5F5] flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-pattern">
         <div class="sm:mx-auto sm:w-full sm:max-w-md">
             <div class="flex justify-center animate-fade-in-down">
-                <img :src="logo" alt="Logo" style="max-width:200px;" class=" w-auto drop-shadow-sm transition-transform duration-300 hover:scale-105" />
+                <img :src="logo" alt="Logo" style="max-width:180px;" class=" w-auto drop-shadow-sm transition-transform duration-300 hover:scale-105" />
             </div>
         </div>
 

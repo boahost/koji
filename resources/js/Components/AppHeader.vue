@@ -1,139 +1,108 @@
 <template>
-    <header class="bg-[#231F20] shadow-sm sticky top-0 z-30 mb-0 md:mb-4">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <!-- Logo e Redes Sociais -->
-            <div class="flex items-center justify-between mb-3">
-                <div class="w-10"></div>
-
-                <!-- Logo (Centro) -->
-                <!-- <Link :href="route('products')" class="inline-block">
-                    <img src="/logo.png" class="h-10 sm:h-12 w-auto object-contain" alt="Logo">
-                </Link> -->
-                <div class="inline-block select-none">
-                    <span class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow" style="letter-spacing: 0.1em;">consultadeimoveis.com</span>
-                </div>
-
-                <!-- Redes Sociais (Direita) -->
-                <div class="flex items-center space-x-4">
-                    <a 
-                        href="https://instagram.com/seu-instagram" 
-                        target="_blank"
-                        class="text-white/70 hover:text-white transition-colors duration-200"
-                        aria-label="Siga-nos no Instagram"
-                    >
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                        </svg>
-                    </a>
-                    <a 
-                        href="https://wa.me/5500000000000" 
-                        target="_blank"
-                        class="text-white/70 hover:text-white transition-colors duration-200"
-                        aria-label="Fale conosco no WhatsApp"
-                    >
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
-                        </svg>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Container de Busca e Filtro -->
-            <div class="flex items-center justify-between gap-3 max-w-2xl mx-auto">
-                <!-- Search -->
-                <div class="flex-1">
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <MagnifyingGlassIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
-                        </div>
-                        <input
-                            id="search"
-                            name="search"
-                            class="block w-full pl-10 pr-3 py-2.5 border-0 rounded-full text-sm bg-white/10 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-white/25 focus:bg-white/20 transition-all duration-200"
-                            placeholder="Buscar no histórico de consultas de imóvel..."
-                            type="search"
-                            v-model="search"
-                            @input="$emit('search-historico', search)"
-                        >
-                    </div>
-                </div>
-
-                <!-- Botão de Filtro -->
-                <button 
-                    @click="$emit('toggle-filters')"
-                    class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 relative flex items-center justify-center min-w-[44px] h-[44px] border-0 transition-all duration-200"
-                    aria-label="Abrir filtros"
-                >
-                    <FunnelIcon class="h-5 w-5 text-white" />
-                </button>
-            </div>
-        </div>
-        
+    <header style="height:85px;" class="bg-white shadow-lg sticky top-0 z-30 mb-0 md:mb-4 border-b-4 border-[#C0A062]">
         <!-- Menu Desktop -->
-        <nav class="hidden md:block bg-white border-t border-gray-200 shadow-sm">
+        <nav class="hidden md:block bg-white">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-center space-x-8 py-4">
-                    <!-- Início -->
-                    <Link
-                        :href="route('customer.dashboard')"
-                        class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 group"
-                        :class="{
-                            'bg-[#231F20] text-white shadow-md': route().current('customer.dashboard'),
-                            'text-gray-600 hover:text-[#231F20] hover:bg-gray-50': !route().current('customer.dashboard')
-                        }"
-                    >
-                        <HomeIcon class="w-5 h-5" />
-                        <span class="font-medium">Início</span>
-                    </Link>
+                <div class="relative flex items-center justify-center py-2">
+                    <!-- Logo (Esquerda) -->
+                    <div class="absolute left-0 z-50" style="margin-top:13px;">
+                        <Link :href="route('customer.dashboard')" class="inline-block transform transition-transform duration-300 hover:scale-105">
+                            <img :src="logo" class="h-24 w-auto object-contain drop-shadow-md" alt="Consulta de Imóveis">
+                        </Link>
+                    </div>
 
-                    <!-- Pedidos -->
-                    <Link
-                        :href="route('orders.index')"
-                        class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 group relative"
-                        :class="{
-                            'bg-[#231F20] text-white shadow-md': route().current('orders.*'),
-                            'text-gray-600 hover:text-[#231F20] hover:bg-gray-50': !route().current('orders.*')
-                        }"
-                    >
-                        <ShoppingBagIcon class="w-5 h-5" />
-                        <span class="font-medium">Pedidos</span>
-                        <span v-if="ordersCount > 0" 
-                            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center animate-pulse"
+                    <!-- Menu (Centro) -->
+                    <div class="flex items-center space-x-6" style="margin-top:10px;">
+                        <!-- Início -->
+                        <Link
+                            :href="route('customer.dashboard')"
+                            class="flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 group"
+                            :class="{
+                                'bg-[#231F20] text-[#C0A062] shadow-md border border-[#C0A062]/20': route().current('customer.dashboard'),
+                                'text-gray-600 hover:text-[#C0A062] hover:bg-gray-50': !route().current('customer.dashboard')
+                            }"
                         >
-                            {{ ordersCount }}
-                        </span>
-                    </Link>
+                            <HomeIcon class="w-5 h-5" />
+                            <span class="hidden lg:inline font-medium">Início</span>
+                        </Link>
 
-                    <!-- Carrinho -->
-                    <Link
-                        :href="route('cart.index')"
-                        class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 group relative"
-                        :class="{
-                            'bg-[#231F20] text-white shadow-md': route().current('cart.*'),
-                            'text-gray-600 hover:text-[#231F20] hover:bg-gray-50': !route().current('cart.*')
-                        }"
-                    >
-                        <ShoppingCartIcon class="w-5 h-5" />
-                        <span class="font-medium">Carrinho</span>
-                        <span v-if="cartItemCount > 0" 
-                            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center animate-pulse"
+                        <!-- Pedidos -->
+                        <Link
+                            :href="route('orders.index')"
+                            class="flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 group relative"
+                            :class="{
+                                'bg-[#231F20] text-[#C0A062] shadow-md border border-[#C0A062]/20': route().current('orders.*'),
+                                'text-gray-600 hover:text-[#C0A062] hover:bg-gray-50': !route().current('orders.*')
+                            }"
                         >
-                            {{ cartItemCount }}
-                        </span>
-                    </Link>
+                            <ShoppingBagIcon class="w-5 h-5" />
+                            <span class="hidden lg:inline font-medium">Pedidos</span>
+                            <span v-if="ordersCount > 0" 
+                                class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center animate-pulse"
+                            >
+                                {{ ordersCount }}
+                            </span>
+                        </Link>
 
-                    <!-- Perfil -->
-                    <Link
-                        :href="route('customer.profile')"
-                        class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 group"
-                        :class="{
-                            'bg-[#231F20] text-white shadow-md': route().current('customer.profile'),
-                            'text-gray-600 hover:text-[#231F20] hover:bg-gray-50': !route().current('customer.profile')
-                        }"
-                    >
-                        <UserIcon class="w-5 h-5" />
-                        <span class="font-medium">Perfil</span>
-                    </Link>
+                        <!-- Carrinho -->
+                        <Link
+                            :href="route('cart.index')"
+                            class="flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 group relative"
+                            :class="{
+                                'bg-[#231F20] text-[#C0A062] shadow-md border border-[#C0A062]/20': route().current('cart.*'),
+                                'text-gray-600 hover:text-[#C0A062] hover:bg-gray-50': !route().current('cart.*')
+                            }"
+                        >
+                            <ShoppingCartIcon class="w-5 h-5" />
+                            <span class="hidden lg:inline font-medium">Carrinho</span>
+                            <span v-if="cartItemCount > 0" 
+                                class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center animate-pulse"
+                            >
+                                {{ cartItemCount }}
+                            </span>
+                        </Link>
+
+                        <!-- Perfil -->
+                        <Link
+                            :href="route('customer.profile')"
+                            class="flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 group"
+                            :class="{
+                                'bg-[#231F20] text-[#C0A062] shadow-md border border-[#C0A062]/20': route().current('customer.profile'),
+                                'text-gray-600 hover:text-[#C0A062] hover:bg-gray-50': !route().current('customer.profile')
+                            }"
+                        >
+                            <UserIcon class="w-5 h-5" />
+                            <span class="hidden lg:inline font-medium">Perfil</span>
+                        </Link>
+                    </div>
+
+                    <!-- Busca e Filtro (Direita) -->
+                    <div class="absolute right-0 flex items-center gap-2">
+                        <!-- Search -->
+                        <div class="relative w-48 lg:w-64">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <MagnifyingGlassIcon class="h-4 w-4 text-gray-400" aria-hidden="true" />
+                            </div>
+                            <input
+                                id="search"
+                                name="search"
+                                class="block w-full pl-9 pr-3 py-2 border border-gray-200 rounded-full text-sm bg-gray-50 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C0A062] focus:bg-white focus:border-transparent transition-all duration-200"
+                                placeholder="Buscar..."
+                                type="search"
+                                v-model="search"
+                                @input="$emit('search-historico', search)"
+                            >
+                        </div>
+
+                        <!-- Botão de Filtro -->
+                        <button 
+                            @click="$emit('toggle-filters')"
+                            class="p-2 rounded-full bg-gray-100 hover:bg-[#C0A062] hover:text-[#231F20] relative flex items-center justify-center border border-gray-200 transition-all duration-200 group"
+                            aria-label="Abrir filtros"
+                        >
+                            <FunnelIcon class="h-5 w-5 text-gray-500 group-hover:text-[#231F20] transition-colors" />
+                        </button>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -143,6 +112,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import logo from '../../css/logo.png'
 import { 
     MagnifyingGlassIcon, 
     FunnelIcon,
