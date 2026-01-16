@@ -21,7 +21,8 @@ class CustomerController extends Controller
             });
         }
 
-        $customers = $query->orderBy('name')
+        $customers = $query->withSum('wallets', 'valor')
+                          ->orderBy('name')
                           ->paginate(10)
                           ->withQueryString();
 
@@ -29,6 +30,19 @@ class CustomerController extends Controller
             'customers' => $customers,
             'filters' => $request->only(['search'])
         ]);
+    }
+
+    public function addBalance(Request $request, Customer $customer)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+        ]);
+
+        $customer->wallets()->create([
+            'valor' => $request->amount,
+        ]);
+
+        return redirect()->back()->with('success', 'Saldo adicionado com sucesso!');
     }
 
     public function create()

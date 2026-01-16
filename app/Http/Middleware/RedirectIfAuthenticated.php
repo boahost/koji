@@ -29,7 +29,7 @@ class RedirectIfAuthenticated
                     return redirect()->route('reseller.dashboard');
                 }
 
-                return redirect('/admin/dashboard');
+                return redirect()->route('dashboard');
             }
         }
 

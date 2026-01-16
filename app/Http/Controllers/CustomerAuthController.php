@@ -20,6 +20,7 @@ class CustomerAuthController extends Controller
 {
     public function showLogin()
     {
+        Log::info('Acessando showLogin do CustomerAuthController');
         return Inertia::render('Customers/Auth/Login');
     }
 
@@ -51,7 +52,7 @@ class CustomerAuthController extends Controller
             Log::info('Login bem-sucedido', ['email' => $credentials['email']]);
             $request->session()->regenerate();
 
-            return redirect()->intended(route('customer.dashboard'));
+            return redirect()->route('customer.dashboard');
         }
 
         // Se chegou aqui, a senha está incorreta

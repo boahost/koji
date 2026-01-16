@@ -90,6 +90,16 @@ class Customer extends Authenticatable
         return $this->hasOne(Wallet::class);
     }
 
+    public function wallets()
+    {
+        return $this->hasMany(Wallet::class);
+    }
+
+    public function getBalanceAttribute()
+    {
+        return $this->wallets()->sum('valor');
+    }
+
     public function propertyQueries()
     {
         return $this->hasMany(PropertyQuery::class);
