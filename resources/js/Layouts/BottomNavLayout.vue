@@ -57,7 +57,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-gray-50 pb-16 md:pb-0">
+    <div class="min-h-screen bg-gradient-to-b from-gray-50 via-gray-50 to-gray-100 pb-16 md:pb-0">
         <slot />
         <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
             <slot name="content" />

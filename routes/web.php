@@ -29,6 +29,11 @@ Route::get('/', function () {
     return redirect()->route('customer.login');
 });
 
+// Rota pública de Produtos (Showcase)
+Route::get('/products', [ProductShowcaseController::class, 'index'])->name('showcase.index');
+Route::get('/carrinho', [ProductShowcaseController::class, 'cart'])->name('cart.index');
+
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -58,8 +63,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
     Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
 
-    // Product Routes
-    Route::prefix('products')->name('products.')->group(function () {
+    // Product Routes (Admin)
+    Route::prefix('admin/products')->name('products.')->group(function () {
         Route::get('/', [ProductController::class, 'index'])->name('index');
         Route::get('/create', [ProductController::class, 'create'])->name('create');
         Route::post('/', [ProductController::class, 'store'])->name('store');

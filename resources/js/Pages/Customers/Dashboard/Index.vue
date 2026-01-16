@@ -88,6 +88,8 @@ const buscandoImovel = ref(false);
 const historicoImovel = ref([]);
 const historicoPorNI = ref([]);
 const historicoPorCodigo = ref([]);
+const carregandoHistoricoCodigo = ref(true);
+const carregandoHistoricoNI = ref(true);
 const mostrarDetalhe = ref(null);
 let filtroHistorico = ref('');
 const itensExibidos = ref(1); // Mostra apenas 1 item inicialmente
@@ -131,6 +133,8 @@ async function carregarHistoricoPorNI() {
     } catch (e) {
         console.error('Erro ao carregar histórico por NI:', e);
         historicoPorNI.value = [];
+    } finally {
+        carregandoHistoricoNI.value = false;
     }
 }
 
@@ -142,6 +146,8 @@ async function carregarHistoricoPorCodigo() {
     } catch (e) {
         console.error('Erro ao carregar histórico por código:', e);
         historicoPorCodigo.value = [];
+    } finally {
+        carregandoHistoricoCodigo.value = false;
     }
 }
 
@@ -592,7 +598,16 @@ async function consultarCodigoEncontrado(codigo) {
                         </div>
                         <div v-if="imovelErro" class="text-red-600 mt-2 text-sm">{{ imovelErro }}</div>
                         <!-- Resultado bonito -->
-                        <div v-if="imovelResultado" class="mt-6 bg-blue-50 rounded-lg p-4 border border-blue-200">
+                        <div v-if="buscandoImovel" class="mt-6 bg-blue-50 rounded-lg p-4 border border-blue-200 animate-pulse">
+                            <div class="h-4 w-40 bg-blue-100 rounded mb-4"></div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div class="h-4 bg-blue-100 rounded"></div>
+                                <div class="h-4 bg-blue-100 rounded"></div>
+                                <div class="h-4 bg-blue-100 rounded"></div>
+                                <div class="h-4 bg-blue-100 rounded"></div>
+                            </div>
+                        </div>
+                        <div v-else-if="imovelResultado" class="mt-6 bg-blue-50 rounded-lg p-4 border border-blue-200">
                             <h3 class="text-lg font-bold text-blue-900 mb-2">Dados do Imóvel</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                                 <div><span class="font-medium">Código INCRA:</span> {{ imovelResultado.codigoImovelIncra }}</div>
@@ -675,7 +690,16 @@ async function consultarCodigoEncontrado(codigo) {
                         <div v-if="erroNI" class="text-red-600 mt-2 text-sm">{{ erroNI }}</div>
                         
                         <!-- Resultado dos códigos encontrados -->
-                        <div v-if="codigosEncontrados.length > 0" class="mt-6 bg-green-50 rounded-lg p-4 border border-green-200">
+                        <div v-if="buscandoPorNI" class="mt-6 bg-green-50 rounded-lg p-4 border border-green-200 animate-pulse">
+                            <div class="h-4 w-56 bg-green-100 rounded mb-3"></div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                <div v-for="n in 3" :key="n" class="bg-white rounded-lg p-3 border border-green-100">
+                                    <div class="h-4 w-24 bg-green-100 rounded mb-2"></div>
+                                    <div class="h-3 w-20 bg-green-100 rounded"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else-if="codigosEncontrados.length > 0" class="mt-6 bg-green-50 rounded-lg p-4 border border-green-200">
                             <h3 class="text-lg font-bold text-green-900 mb-3">Códigos de Imóveis Encontrados</h3>
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 <div 
@@ -700,11 +724,24 @@ async function consultarCodigoEncontrado(codigo) {
 
                 <!-- Histórico de Consultas por NI -->
                 <div v-if="abaAtiva === 'ni'" class="mt-6">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-green-200">
+                    <div class="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-sm border border-green-200">
                         <div class="flex items-center justify-between mb-2">
                             <h3 class="text-lg font-bold text-green-900">Histórico de Consultas por NI</h3>
                         </div>
-                        <div v-if="historicoPorNI.length === 0" class="text-gray-500">Nenhuma consulta por NI realizada ainda.</div>
+                        <div v-if="carregandoHistoricoNI" class="flex flex-col gap-4">
+                            <div v-for="n in 2" :key="n" class="rounded-xl border border-green-100 bg-green-50 p-4 shadow-sm animate-pulse">
+                                <div class="flex justify-between mb-3">
+                                    <div class="h-4 w-24 bg-green-100 rounded-full"></div>
+                                    <div class="h-3 w-16 bg-green-100 rounded-full"></div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div class="h-4 bg-green-100 rounded"></div>
+                                    <div class="h-4 bg-green-100 rounded"></div>
+                                    <div class="h-4 bg-green-100 rounded"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else-if="historicoPorNI.length === 0" class="text-gray-500">Nenhuma consulta por NI realizada ainda.</div>
                         <div v-else class="flex flex-col gap-4">
                             <div v-for="item in historicoFiltradoPorNI" :key="item.id" class="rounded-xl border border-green-100 bg-green-50 p-4 flex flex-col gap-2 shadow-sm hover:shadow-md transition-all">
                                 <div class="flex justify-between items-start mb-2">
@@ -757,13 +794,27 @@ async function consultarCodigoEncontrado(codigo) {
 
                 <!-- Histórico de Consultas por Código -->
                 <div v-if="abaAtiva === 'codigo'" class="mt-6">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-yellow-200">
+                    <div class="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-sm border border-yellow-200">
                         <div class="flex items-center justify-between mb-2">
                             <h3 class="text-lg font-bold text-yellow-900">Histórico de Consultas por Código</h3>
                         </div>
-                        <div v-if="historicoPorCodigo.length === 0" class="text-gray-500">Nenhuma consulta por código realizada ainda.</div>
+                        <div v-if="carregandoHistoricoCodigo" class="flex flex-col gap-4">
+                            <div v-for="n in 2" :key="n" class="rounded-xl border border-yellow-100 bg-amber-50 p-4 shadow-sm animate-pulse">
+                                <div class="flex justify-between mb-3">
+                                    <div class="h-4 w-24 bg-amber-100 rounded-full"></div>
+                                    <div class="h-3 w-16 bg-amber-100 rounded-full"></div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                    <div class="h-4 bg-amber-100 rounded"></div>
+                                    <div class="h-4 bg-amber-100 rounded"></div>
+                                    <div class="h-4 bg-amber-100 rounded"></div>
+                                    <div class="h-4 bg-amber-100 rounded"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else-if="historicoPorCodigo.length === 0" class="text-gray-500">Nenhuma consulta por código realizada ainda.</div>
                         <div v-else class="flex flex-col gap-4">
-                            <div v-for="item in historicoFiltradoPorCodigo" :key="item.id" class="rounded-xl border border-yellow-100 bg-yellow-50 p-4 flex flex-col gap-2 shadow-sm hover:shadow-md transition-all">
+                            <div v-for="item in historicoFiltradoPorCodigo" :key="item.id" class="rounded-xl border border-yellow-100 bg-amber-50 p-4 flex flex-col gap-2 shadow-sm hover:shadow-md transition-all">
                                 <div class="flex justify-between items-start mb-2">
                                     <span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                         Busca por Código
