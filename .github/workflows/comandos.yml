@@ -1,0 +1,24 @@
+name: Executar comandos no servidor
+
+on:
+  workflow_dispatch: # você clica e executa manualmente
+  push:
+    branches:
+      - main   # opcional (remove se não quiser automático)
+
+jobs:
+  run-commands:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Executar comandos via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 103.204.193.6
+          port: 11455
+          username: root
+          key: ${{ secrets.SERVER_SSH }}
+          script: |
+            echo "Iniciando comandos..."
+            echo "Finalizado!"
+
